@@ -6,7 +6,7 @@ import { db } from './db';
 import { requireDesigner, startSession, endSession, newToken } from './auth';
 import { saveUpload, removeUpload } from './files';
 import { STAGES } from './stages';
-import { isHex, safeFont, EMPTY_PRESENTATION } from './presentation';
+import { isHex, safeFont, EMPTY_PRESENTATION, COVERS } from './presentation';
 
 const str = (fd, k, max = 4000) => String(fd.get(k) ?? '').trim().slice(0, max);
 const log = (projectId, text) => db.event.create({ data: { projectId, actor: 'estudio', text } });
@@ -137,6 +137,7 @@ export async function savePresentation(fd) {
     bodyFont: safeFont(str(fd, 'bodyFont', 40), 'Inter'),
     typeNote: str(fd, 'typeNote', 400),
     closing: str(fd, 'closing', 120) || EMPTY_PRESENTATION.closing,
+    cover: COVERS.some((c) => c.id === str(fd, 'cover', 20)) ? str(fd, 'cover', 20) : 'liso',
   };
   await db.project.update({ where: { id: p.id }, data: { presentation: JSON.stringify(pres) } });
   back(p.id);
@@ -145,7 +146,7 @@ export async function savePresentation(fd) {
 export async function addAssets(fd) {
   const { me, p } = await own(str(fd, 'id', 40));
   const kind = str(fd, 'kind', 20);
-  if (!['logo', 'mockup', 'entrega'].includes(kind)) return;
+  if (!['logo', 'mockup', 'grafismo', 'entrega'].includes(kind)) return;
   const files = fd.getAll('arquivos');
   const label = str(fd, 'label', 120);
   const last = await db.asset.count({ where: { projectId: p.id, kind } });

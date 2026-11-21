@@ -48,3 +48,9 @@
 .show .end-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:40px}
 .show .end-row a{border-radius:999px;padding:14px 22px;font-weight:600;font-size:15px;text-decoration:none;border:1px solid currentColor;color:inherit}
 @media (prefers-reduced-motion:reduce){.show *{animation:none!important}.show{scroll-snap-type:none}}
+
+/* Fundos da capa */
+.s-cover.cover-grafismo{background-size:cover;background-position:center}
+.s-cover.cover-grade{background-image:linear-gradient(color-mix(in srgb,var(--fg) 9%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--fg) 9%,transparent) 1px,transparent 1px);background-size:64px 64px;background-position:-1px -1px}
+.s-cover.cover-grao::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}

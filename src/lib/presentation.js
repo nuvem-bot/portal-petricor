@@ -13,6 +13,8 @@ export const EMPTY_PRESENTATION = {
   bodyFont: 'Inter',
   typeNote: '',
   closing: 'Essa é a sua marca. Ela é sua?',
+  // Fundo da capa: liso | grafismo (imagem da marca) | ondas | grade | grao
+  cover: 'liso',
 };
 
 export function parsePresentation(raw) {
@@ -23,6 +25,14 @@ export function parsePresentation(raw) {
     return { ...EMPTY_PRESENTATION };
   }
 }
+
+export const COVERS = [
+  { id: 'liso', name: 'Liso, só a cor principal' },
+  { id: 'grafismo', name: 'Grafismo da marca (imagem enviada)' },
+  { id: 'grao', name: 'Textura de grão' },
+  { id: 'grade', name: 'Grade sutil' },
+  { id: 'ondas', name: 'Linhas em movimento' },
+];
 
 export const isHex = (v) => /^#[0-9a-fA-F]{6}$/.test(v || '');
 // Nome de fonte do Google Fonts: só letras, números e espaços

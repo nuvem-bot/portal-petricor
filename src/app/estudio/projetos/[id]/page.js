@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { STAGES, stageIndex, whoActs } from '@/lib/stages';
 import { QUESTIONS, parseBriefing } from '@/lib/briefing';
-import { parsePresentation } from '@/lib/presentation';
+import { parsePresentation, COVERS } from '@/lib/presentation';
 import { fileUrl, fmtDate, fmtDateTime, fmtSize } from '@/lib/url';
 import {
   setStage, regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation,
@@ -30,6 +30,7 @@ export default async function ProjectPage({ params }) {
   const answered = p.moodItems.filter((m) => m.liked && m.disliked).length;
   const logos = p.assets.filter((a) => a.kind === 'logo');
   const mockups = p.assets.filter((a) => a.kind === 'mockup');
+  const grafismos = p.assets.filter((a) => a.kind === 'grafismo');
   const delivery = p.assets.filter((a) => a.kind === 'entrega');
   const w = whoActs(p);
 
@@ -137,8 +138,22 @@ export default async function ProjectPage({ params }) {
               </div>
             </div>
 
+            <div style={{ marginBottom: 20 }}>
+              <span className="field"><span>Grafismo da marca <span className="hint">opcional</span></span></span>
+              <p className="muted small" style={{ margin: '4px 0 8px' }}>Padrão, textura ou ilustração da identidade para o fundo da capa. Imagem larga (ex.: 2400 × 1500 px).</p>
+              <AssetList items={grafismos} />
+              {!grafismos.length && <UploadAssets id={p.id} kind="grafismo" label="Enviar grafismo" />}
+            </div>
+
             <form action={savePresentation} className="form">
               <input type="hidden" name="id" value={p.id} />
+              <div className="field">
+                <label htmlFor="pr-cover">Fundo da capa</label>
+                <select id="pr-cover" name="cover" defaultValue={pres.cover}>
+                  {COVERS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <span className="hint">Escolha o que combina com a marca. “Grafismo” usa a imagem enviada logo abaixo; sem imagem, a capa fica lisa.</span>
+              </div>
               <div className="field"><label htmlFor="pr-title">Frase de abertura <span className="hint">aparece na capa, abaixo do nome</span></label><input id="pr-title" name="title" defaultValue={pres.title} placeholder="Ex.: cerâmica feita no ritmo da maré" /></div>
               <div className="field"><label htmlFor="pr-concept">Conceito</label><textarea id="pr-concept" name="concept" defaultValue={pres.concept} placeholder="O texto grande do slide de conceito. Uma ou duas frases." /></div>
               <div><span className="field"><span>Três pilares do conceito</span></span>

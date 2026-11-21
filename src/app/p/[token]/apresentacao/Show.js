@@ -10,7 +10,7 @@ function onColor(hex) {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#141414' : '#F7F4EE';
 }
 
-export default function Show({ base, brand, client, date, pres, display, body, logo, mockups, canDecide }) {
+export default function Show({ base, brand, client, date, pres, display, body, logo, pattern, mockups, canDecide }) {
   const root = useRef(null);
   const canvas = useRef(null);
   const [idx, setIdx] = useState(0);
@@ -18,6 +18,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
   const [c1, c2, c3, c4] = pres.palette;
   const bg = c1.hex, fg = onColor(c1.hex);
   const pillars = pres.pillars.filter((x) => x.t || x.d);
+  const cover = pres.cover === 'grafismo' && !pattern ? 'liso' : pres.cover || 'liso';
   const slides = ['capa', pres.concept && 'conceito', 'marca', 'paleta', 'tipografia', mockups.length && 'aplicacoes', 'fim'].filter(Boolean);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
 
   // Linhas animadas da capa, nas cores da paleta
   useEffect(() => {
-    const cv = canvas.current; if (!cv) return;
+    const cv = canvas.current; if (!cv || cover !== 'ondas') return;
     const cx = cv.getContext('2d');
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let raf, t = 0;
@@ -64,7 +65,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
     };
     frame();
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', size); };
-  }, [c3.hex, fg]);
+  }, [c3.hex, fg, cover]);
 
   const D = { fontFamily: `"${display}", Georgia, serif` };
   const cur = slides[idx];
@@ -75,14 +76,15 @@ export default function Show({ base, brand, client, date, pres, display, body, l
       <Link href={`${base}/proposta`} className="show-close" style={light ? { color: bg, borderColor: bg } : undefined}>Fechar ✕</Link>
       <div className="show-count" style={light ? { color: bg } : undefined}>{String(idx + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}</div>
 
-      <section className="slide s-cover" data-s="capa">
+      <section className={`slide s-cover cover-${cover}`} data-s="capa"
+        style={cover === 'grafismo' ? { backgroundImage: `linear-gradient(90deg, ${bg}f2 0%, ${bg}b3 45%, ${bg}00 100%), url("${pattern}")` } : undefined}>
         <div className="sin">
           <div className="slab up">Petricor apresenta · {date}</div>
           <h1 className="up" style={{ ...D, animationDelay: '.15s' }}>{brand}</h1>
           {pres.title && <p className="lead up" style={{ ...D, animationDelay: '.3s', color: c3.hex }}>{pres.title}</p>}
           <div className="meta up" style={{ animationDelay: '.45s' }}><span className="slab">Identidade visual</span><span className="slab">Para {client}</span><span className="slab">Role para baixo ↓</span></div>
         </div>
-        <canvas ref={canvas} className="waves" aria-hidden="true" />
+        {cover === 'ondas' && <canvas ref={canvas} className="waves" aria-hidden="true" />}
       </section>
 
       {pres.concept && (

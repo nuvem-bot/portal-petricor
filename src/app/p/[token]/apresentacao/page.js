@@ -10,6 +10,7 @@ export default async function Apresentacao({ params }) {
   const bf = safeFont(pres.bodyFont, 'Inter');
   const fam = [...new Set([df, bf])].map((f) => `family=${f.replace(/ /g, '+')}:wght@300;400;500;700`).join('&');
   const logo = p.assets.find((a) => a.kind === 'logo');
+  const grafismo = p.assets.find((a) => a.kind === 'grafismo');
   const mockups = p.assets.filter((a) => a.kind === 'mockup').map((a) => ({ src: fileUrl(a.file, p.token), label: a.label.replace(/\.[a-z0-9]+$/i, '') }));
   return (
     <>
@@ -23,6 +24,7 @@ export default async function Apresentacao({ params }) {
         display={df}
         body={bf}
         logo={logo ? fileUrl(logo.file, p.token) : null}
+        pattern={grafismo ? fileUrl(grafismo.file, p.token) : null}
         mockups={mockups}
         canDecide={p.stage === 'proposta' && !p.decision}
       />
