@@ -17,6 +17,7 @@ function nextStep(p, base) {
     case 'criacao':
       return { who: 'estudio', h: `${name} está desenhando a sua marca.`, t: 'Nesta fase você não precisa fazer nada. Você recebe a proposta aqui.' };
     case 'proposta':
+      if (!p.publishedAt) return { who: 'estudio', h: `${name} está finalizando a sua proposta.`, t: 'Assim que ela liberar, a apresentação aparece aqui.' };
       return p.decision === 'ajustes'
         ? { who: 'estudio', h: 'Seus ajustes foram recebidos.', t: `A nova versão aparece aqui. Rodadas usadas: ${p.roundsUsed} de ${p.roundsIncluded}.`, cta: 'Ver pedido', href: `${base}/proposta` }
         : { who: 'cliente', h: 'A proposta da sua identidade está pronta.', t: 'Assista à apresentação com calma e depois diga se aprova ou se quer ajustes.', cta: 'Ver proposta', href: `${base}/proposta` };

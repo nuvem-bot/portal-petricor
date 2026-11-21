@@ -13,8 +13,8 @@ export default function NewProject() {
       <StateForm action={createProject}>
         <div className="fgrid">
           <div className="field"><label htmlFor="np-brand">Nome da marca</label><input id="np-brand" name="brandName" required /></div>
-          <div className="field"><label htmlFor="np-client">Nome da cliente</label><input id="np-client" name="clientName" required /></div>
-          <div className="field"><label htmlFor="np-email">E-mail da cliente <span className="hint">opcional</span></label><input id="np-email" name="clientEmail" type="email" /></div>
+          <div className="field"><label htmlFor="np-client">Nome do cliente</label><input id="np-client" name="clientName" required /></div>
+          <div className="field"><label htmlFor="np-email">E-mail do cliente <span className="hint">opcional</span></label><input id="np-email" name="clientEmail" type="email" /></div>
           <div className="field"><label htmlFor="np-due">Entrega prevista <span className="hint">opcional</span></label><input id="np-due" name="dueDate" type="date" /></div>
         </div>
         <div className="row"><Submit pendingText="Criando…">Criar projeto</Submit><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancelar</button></div>

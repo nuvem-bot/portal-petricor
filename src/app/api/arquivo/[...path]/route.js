@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { currentDesigner, projectByToken } from '@/lib/auth';
 import { UPLOAD_DIR, MIME } from '@/lib/files';
 
-// Serve um arquivo enviado. Acesso: designer logada, ou a cliente com o token do próprio projeto.
+// Serve um arquivo enviado. Acesso: designer logada, ou o cliente com o token do próprio projeto.
 export async function GET(req, { params }) {
   const rel = params.path.join('/');
   const projectId = params.path[0];

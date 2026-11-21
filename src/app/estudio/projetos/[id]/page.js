@@ -6,7 +6,7 @@ import { QUESTIONS, parseBriefing } from '@/lib/briefing';
 import { parsePresentation, COVERS } from '@/lib/presentation';
 import { fileUrl, fmtDate, fmtDateTime, fmtSize } from '@/lib/url';
 import {
-  setStage, regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation,
+  setStage, regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation, publishPresentation,
   addAssets, deleteAsset, postNote, updateProject, deleteProject,
 } from '@/lib/actions-studio';
 import Submit from '@/components/Submit';
@@ -18,6 +18,7 @@ export default async function ProjectPage({ params }) {
     include: {
       moodItems: { orderBy: { position: 'asc' } },
       assets: { orderBy: { position: 'asc' } },
+      versions: { orderBy: { number: 'desc' } },
       events: { orderBy: { createdAt: 'desc' }, take: 50 },
     },
   });
@@ -43,7 +44,7 @@ export default async function ProjectPage({ params }) {
           <p>{p.clientName}{p.clientEmail ? ` · ${p.clientEmail}` : ''}{p.dueDate ? ` · entrega prevista ${fmtDate(p.dueDate, { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}</p>
         </div>
         <span className={`pill ${w === 'estudio' ? 'now' : w === 'cliente' ? 'wait' : 'ok'}`}>
-          {STAGES[cur].name} · {w === 'estudio' ? 'com você' : w === 'cliente' ? 'com a cliente' : 'concluído'}
+          {STAGES[cur].name} · {w === 'estudio' ? 'com você' : w === 'cliente' ? 'com o cliente' : 'concluído'}
         </span>
       </div>
 
@@ -52,7 +53,7 @@ export default async function ProjectPage({ params }) {
           {/* ETAPA */}
           <section className="panel">
             <span className="label">Etapa do projeto</span>
-            <p className="muted small" style={{ marginBottom: 12 }}>A cliente vê a etapa atual no portal. Ao mover para Proposta, ela recebe a apresentação para aprovar.</p>
+            <p className="muted small" style={{ marginBottom: 12 }}>O cliente vê a etapa atual no portal. A apresentação só aparece para ele depois de “Liberar para o cliente”.</p>
             <div className="row">
               {STAGES.map((s, i) => (
                 <form key={s.id} action={setStage}>
@@ -67,7 +68,7 @@ export default async function ProjectPage({ params }) {
           <section className="panel" id="briefing">
             <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
               <span className="label">Briefing</span>
-              <span className={`pill ${p.briefingAt ? 'ok' : 'wait'}`}>{p.briefingAt ? `Enviado ${fmtDate(p.briefingAt)}` : Object.keys(brief).length ? 'Rascunho da cliente' : 'Não respondido'}</span>
+              <span className={`pill ${p.briefingAt ? 'ok' : 'wait'}`}>{p.briefingAt ? `Enviado ${fmtDate(p.briefingAt)}` : Object.keys(brief).length ? 'Rascunho do cliente' : 'Não respondido'}</span>
             </div>
             {Object.keys(brief).length ? (
               <dl style={{ margin: 0 }}>
@@ -77,7 +78,7 @@ export default async function ProjectPage({ params }) {
                   return <div key={q.id} style={{ marginBottom: 14 }}><dt style={{ fontWeight: 600, fontSize: 13 }}>{q.label}</dt><dd className="muted" style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{v || '—'}</dd></div>;
                 })}
               </dl>
-            ) : <p className="empty">A cliente responde pelo link. As respostas aparecem aqui.</p>}
+            ) : <p className="empty">O cliente responde pelo link. As respostas aparecem aqui.</p>}
           </section>
 
           {/* MOODBOARD */}
@@ -108,7 +109,7 @@ export default async function ProjectPage({ params }) {
                   </div>
                 ))}
               </div>
-            ) : <p className="empty">Adicione as referências. Em cada uma, a cliente escreve o que gostou e o que não gostou.</p>}
+            ) : <p className="empty">Adicione as referências. Em cada uma, o cliente escreve o que gostou e o que não gostou.</p>}
             <p className="muted small" style={{ marginTop: 10 }}>Para salvar a legenda, digite e aperte Enter.</p>
           </section>
 
@@ -118,10 +119,26 @@ export default async function ProjectPage({ params }) {
               <span className="label">Proposta e apresentação</span>
               <div className="row">
                 {p.decision && <span className={`pill ${p.decision === 'aprovado' ? 'ok' : 'warn'}`}>{p.decision === 'aprovado' ? 'Aprovada' : 'Ajustes pedidos'} · {fmtDate(p.decisionAt)}</span>}
-                <a className="btn sm" href={`/p/${p.token}/apresentacao`} target="_blank" rel="noopener">Pré-visualizar ↗</a>
+                <span className={`pill ${p.versions.length ? 'ok' : 'wait'}`}>{p.versions.length ? `Versão ${p.versions[0].number} liberada ${fmtDate(p.versions[0].publishedAt)}` : 'Ainda não liberada'}</span>
+                <a className="btn sm" href={`/p/${p.token}/apresentacao?rascunho=1`} target="_blank" rel="noopener">Pré-visualizar rascunho ↗</a>
               </div>
             </div>
-            {p.decision === 'ajustes' && p.decisionNote && <p className="msg-err" style={{ color: 'var(--warn)', marginBottom: 16 }}>Pedido da cliente: “{p.decisionNote}”. Depois de ajustar, clique em Proposta na etapa para reenviar.</p>}
+            {p.decision === 'ajustes' && p.decisionNote && <p className="msg-err" style={{ color: 'var(--warn)', marginBottom: 16 }}>Pedido do cliente: “{p.decisionNote}”. Depois de ajustar, clique em “Liberar para o cliente” para enviar a nova versão.</p>}
+            {p.versions.length > 0 && (
+              <ul className="files" style={{ marginBottom: 16 }}>
+                {p.versions.map((v) => (
+                  <li key={v.id}>
+                    <span className="ext">v{v.number}</span>
+                    <div>
+                      <b>Versão {v.number}</b> <span className={`pill ${v.decision === 'aprovado' ? 'ok' : v.decision === 'ajustes' ? 'warn' : 'wait'}`}>{v.decision === 'aprovado' ? 'aprovada' : v.decision === 'ajustes' ? 'pediu ajustes' : 'aguardando o cliente'}</span><br />
+                      <small className="muted">Liberada {fmtDateTime(v.publishedAt)}{v.decisionNote ? ` · “${v.decisionNote}”` : ''}</small>
+                    </div>
+                    <a className="linkbtn" href={`/p/${p.token}/apresentacao?v=${v.number}`} target="_blank" rel="noopener">Ver</a>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="muted small" style={{ marginBottom: 16 }}>“Salvar rascunho” guarda sem o cliente ver. “Liberar para o cliente” envia esta versão, com o logo e os mockups de agora, e move o projeto para Proposta.</p>
 
             <div className="fgrid" style={{ marginBottom: 20 }}>
               <div>
@@ -184,7 +201,10 @@ export default async function ProjectPage({ params }) {
               </div>
               <div className="field"><label htmlFor="pr-tn">Por que essas fontes</label><textarea id="pr-tn" name="typeNote" defaultValue={pres.typeNote} style={{ minHeight: 60 }} /></div>
               <div className="field"><label htmlFor="pr-cl">Pergunta final</label><input id="pr-cl" name="closing" defaultValue={pres.closing} /></div>
-              <div><Submit>Salvar apresentação</Submit></div>
+              <div className="row">
+                <Submit className="btn ghost">Salvar rascunho</Submit>
+                <Submit formAction={publishPresentation} pendingText="Liberando…">{p.versions.length ? `Liberar versão ${p.versions[0].number + 1} para o cliente` : 'Liberar para o cliente'}</Submit>
+              </div>
             </form>
           </section>
 
@@ -192,12 +212,12 @@ export default async function ProjectPage({ params }) {
           <section className="panel" id="entrega">
             <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
               <span className="label">Arquivos de entrega</span>
-              <span className={`pill ${p.stage === 'entrega' ? 'ok' : 'wait'}`}>{p.stage === 'entrega' ? 'Liberados para a cliente' : 'A cliente vê quando a etapa for Entrega'}</span>
+              <span className={`pill ${p.stage === 'entrega' ? 'ok' : 'wait'}`}>{p.stage === 'entrega' ? 'Liberados para o cliente' : 'O cliente vê quando a etapa for Entrega'}</span>
             </div>
             <AssetList items={delivery} download />
             <form action={addAssets} className="fgrid" style={{ marginTop: 12, alignItems: 'end' }}>
               <input type="hidden" name="id" value={p.id} /><input type="hidden" name="kind" value="entrega" />
-              <div className="field"><label htmlFor="en-label">Nome para a cliente <span className="hint">ex.: Manual da marca</span></label><input id="en-label" name="label" /></div>
+              <div className="field"><label htmlFor="en-label">Nome para o cliente <span className="hint">ex.: Manual da marca</span></label><input id="en-label" name="label" /></div>
               <div className="field"><label htmlFor="en-file">Arquivo(s)</label><input id="en-file" type="file" name="arquivos" multiple required /></div>
               <div><Submit className="btn sm" pendingText="Enviando…">Adicionar à entrega</Submit></div>
             </form>
@@ -206,9 +226,9 @@ export default async function ProjectPage({ params }) {
 
         <div className="stack">
           <section className="panel">
-            <span className="label">Link da cliente</span>
+            <span className="label">Link do cliente</span>
             <CopyLink url={link} />
-            <p className="muted small" style={{ marginTop: 10 }}>Quem tiver este link vê o projeto. Envie só para a cliente.</p>
+            <p className="muted small" style={{ marginTop: 10 }}>Quem tiver este link vê o projeto. Envie só para o cliente.</p>
             <form action={regenerateLink} style={{ marginTop: 8 }}><input type="hidden" name="id" value={p.id} /><button className="linkbtn" type="submit">Gerar novo link (o anterior para de funcionar)</button></form>
           </section>
 

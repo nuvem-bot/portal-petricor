@@ -1,9 +1,9 @@
 // As etapas do processo de identidade visual da Petricor, na ordem.
 export const STAGES = [
-  { id: 'briefing', name: 'Briefing', client: 'Você conta sobre a marca', studio: 'Aguardando respostas da cliente' },
+  { id: 'briefing', name: 'Briefing', client: 'Você conta sobre a marca', studio: 'Aguardando respostas do cliente' },
   { id: 'moodboard', name: 'Moodboard', client: 'Você diz o que gostou e não gostou em cada referência', studio: 'Montar moodboard e receber feedback' },
   { id: 'criacao', name: 'Criação', client: 'A designer está desenhando', studio: 'Desenhar a identidade' },
-  { id: 'proposta', name: 'Proposta', client: 'Você vê a apresentação e aprova', studio: 'Proposta com a cliente' },
+  { id: 'proposta', name: 'Proposta', client: 'Você vê a apresentação e aprova', studio: 'Proposta com o cliente' },
   { id: 'finalizacao', name: 'Finalização', client: 'Manual e arquivos finais', studio: 'Fechar manual e exportar arquivos' },
   { id: 'entrega', name: 'Entrega', client: 'Tudo pronto para usar', studio: 'Arquivos liberados' },
 ];
@@ -17,7 +17,7 @@ export function whoActs(p) {
     case 'briefing': return p.briefingAt ? 'estudio' : 'cliente';
     case 'moodboard': return p.moodSentAt ? 'estudio' : 'cliente';
     case 'criacao': return 'estudio';
-    case 'proposta': return p.decision === 'ajustes' ? 'estudio' : 'cliente';
+    case 'proposta': return !p.publishedAt || p.decision === 'ajustes' ? 'estudio' : 'cliente';
     case 'finalizacao': return 'estudio';
     default: return 'ninguem';
   }

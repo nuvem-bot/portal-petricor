@@ -58,7 +58,7 @@ export async function sendMood(fd) {
 
 export async function decide(_, fd) {
   const p = await project(fd);
-  if (p.stage !== 'proposta' || p.decision) return { error: 'Esta proposta já foi respondida.' };
+  if (p.stage !== 'proposta' || !p.publishedAt || p.decision) return { error: 'Esta proposta já foi respondida.' };
   const d = str(fd, 'decision', 10);
   const note = str(fd, 'note', 2000);
   if (d === 'ajustes' && !note) return { error: 'Conte o que você quer ajustar.' };
@@ -66,6 +66,8 @@ export async function decide(_, fd) {
     return { error: 'As rodadas de ajuste incluídas já foram usadas. Fale com a designer.' };
   }
   if (!['aprovado', 'ajustes'].includes(d)) return { error: 'Escolha uma opção.' };
+  const v = await db.proposalVersion.findFirst({ where: { projectId: p.id }, orderBy: { number: 'desc' } });
+  if (v) await db.proposalVersion.update({ where: { id: v.id }, data: { decision: d, decisionNote: note || null, decisionAt: new Date() } });
   await db.project.update({
     where: { id: p.id },
     data: {
@@ -73,7 +75,7 @@ export async function decide(_, fd) {
       ...(d === 'aprovado' ? { stage: 'finalizacao' } : { roundsUsed: { increment: 1 } }),
     },
   });
-  await log(p.id, d === 'aprovado' ? `${p.clientName} aprovou a identidade` : `${p.clientName} pediu ajustes: “${note}”`);
+  await log(p.id, d === 'aprovado' ? `${p.clientName} aprovou a versão ${v?.number || 1}` : `${p.clientName} pediu ajustes na versão ${v?.number || 1}: “${note}”`);
   revalidatePath(`/p/${p.token}`, 'layout');
   return { ok: d };
 }

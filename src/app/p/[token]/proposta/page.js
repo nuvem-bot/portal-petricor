@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { loadClientProject } from '@/lib/client-project';
-import { parsePresentation } from '@/lib/presentation';
+import { versionSnapshot } from '@/lib/presentation';
 import { fileUrl, fmtDate } from '@/lib/url';
 import { decide } from '@/lib/actions-client';
 import StateForm from '@/components/StateForm';
@@ -9,9 +9,12 @@ import Submit from '@/components/Submit';
 export default async function Proposta({ params }) {
   const p = await loadClientProject(params.token);
   const base = `/p/${p.token}`;
-  const ready = ['proposta', 'finalizacao', 'entrega'].includes(p.stage);
-  const pres = parsePresentation(p.presentation);
-  const logo = p.assets.find((a) => a.kind === 'logo');
+  const latest = p.versions[0];
+  const older = p.versions.slice(1);
+  const snap = versionSnapshot(latest);
+  const ready = !!snap && ['proposta', 'finalizacao', 'entrega'].includes(p.stage);
+  const pres = snap?.pres;
+  const logo = snap?.logo ? { file: snap.logo } : null;
   const left = p.roundsIncluded - p.roundsUsed;
 
   if (!ready) {
@@ -24,7 +27,7 @@ export default async function Proposta({ params }) {
   return (
     <>
       <div className="vhead">
-        <div><span className="label">Etapa 4 · Proposta e aprovação</span><h1>Sua identidade visual</h1><p>Abra a apresentação em tela cheia. Leva uns 3 minutos.</p></div>
+        <div><span className="label">Etapa 4 · Proposta e aprovação</span><h1>Sua identidade visual{p.versions.length > 1 ? ` · versão ${latest.number}` : ''}</h1><p>Abra a apresentação em tela cheia. Leva uns 3 minutos.</p></div>
         <span className={`pill ${p.decision === 'aprovado' ? 'ok' : p.decision === 'ajustes' ? 'warn' : 'now'}`}>
           {p.decision === 'aprovado' ? `Aprovada em ${fmtDate(p.decisionAt)}` : p.decision === 'ajustes' ? 'Ajustes pedidos' : 'Aguardando você'}
         </span>
@@ -33,7 +36,7 @@ export default async function Proposta({ params }) {
         <Link href={`${base}/apresentacao`} className="panel" style={{ background: pres.palette[0].hex, borderColor: 'transparent', aspectRatio: '16/9', display: 'grid', placeItems: 'center', position: 'relative', padding: 0, overflow: 'hidden', textDecoration: 'none' }}>
           {logo ? <img src={fileUrl(logo.file, p.token)} alt={`Logo ${p.brandName}`} style={{ maxWidth: '40%', maxHeight: '45%', objectFit: 'contain' }} />
             : <span style={{ fontFamily: 'var(--display)', fontSize: 'clamp(32px,6vw,64px)', color: pres.palette[1].hex }}>{p.brandName}</span>}
-          <span className="pill" style={{ position: 'absolute', left: 16, bottom: 16, background: pres.palette[1].hex, color: pres.palette[0].hex }}>Abrir apresentação</span>
+          <span className="pill" style={{ position: 'absolute', left: 16, bottom: 16, background: pres.palette[1].hex, color: pres.palette[0].hex }}>Abrir apresentação{p.versions.length > 1 ? ` · versão ${latest.number}` : ''}</span>
         </Link>
         <div className="panel">
           <span className="label">O que você achou?</span>
@@ -58,6 +61,20 @@ export default async function Proposta({ params }) {
           )}
         </div>
       </div>
+      {older.length > 0 && (
+        <div className="panel" style={{ marginTop: 20 }}>
+          <span className="label">Versões anteriores</span>
+          <ul className="files">
+            {older.map((v) => (
+              <li key={v.id}>
+                <span className="ext">v{v.number}</span>
+                <div><b>Versão {v.number}</b><br /><small className="muted">{fmtDate(v.publishedAt)}{v.decision === 'ajustes' && v.decisionNote ? ` · você pediu: “${v.decisionNote}”` : ''}</small></div>
+                <Link className="btn ghost sm" href={`${base}/apresentacao?v=${v.number}`}>Ver versão {v.number}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </>
   );
 }

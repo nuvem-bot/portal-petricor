@@ -38,6 +38,8 @@ model Project {
 
   // Proposta: dados da apresentação em JSON (conceito, paleta, tipografia)
   presentation String?
+  // Quando a última versão da proposta foi liberada para o cliente
+  publishedAt  DateTime?
   proposalSentAt DateTime?
   // null | aprovado | ajustes
   decision     String?
@@ -46,6 +48,7 @@ model Project {
   roundsIncluded Int     @default(2)
   roundsUsed     Int     @default(0)
 
+  versions    ProposalVersion[]
   moodItems   MoodItem[]
   assets      Asset[]
   events      Event[]
@@ -90,4 +93,21 @@ model Event {
   actor     String
   text      String
   createdAt DateTime @default(now())
+}
+
+// Cada vez que a designer libera a proposta para o cliente nasce uma versão (v1, v2...).
+// Guarda uma foto da apresentação e a resposta do cliente para aquela versão.
+model ProposalVersion {
+  id           String    @id @default(cuid())
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId    String
+  number       Int
+  snapshot     String
+  publishedAt  DateTime  @default(now())
+  // null | aprovado | ajustes
+  decision     String?
+  decisionNote String?
+  decisionAt   DateTime?
+
+  @@unique([projectId, number])
 }

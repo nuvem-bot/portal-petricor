@@ -6,7 +6,7 @@ import { db } from './db';
 import { requireDesigner, startSession, endSession, newToken } from './auth';
 import { saveUpload, removeUpload } from './files';
 import { STAGES } from './stages';
-import { isHex, safeFont, EMPTY_PRESENTATION, COVERS } from './presentation';
+import { isHex, safeFont, EMPTY_PRESENTATION, COVERS, draftSnapshot } from './presentation';
 
 const str = (fd, k, max = 4000) => String(fd.get(k) ?? '').trim().slice(0, max);
 const log = (projectId, text) => db.event.create({ data: { projectId, actor: 'estudio', text } });
@@ -31,7 +31,7 @@ export async function createProject(_, fd) {
   const me = await requireDesigner();
   const brandName = str(fd, 'brandName', 120);
   const clientName = str(fd, 'clientName', 120);
-  if (!brandName || !clientName) return { error: 'Preencha o nome da marca e da cliente.' };
+  if (!brandName || !clientName) return { error: 'Preencha o nome da marca e do cliente.' };
   const due = str(fd, 'dueDate', 20);
   const p = await db.project.create({
     data: {
@@ -58,9 +58,6 @@ export async function setStage(fd) {
   const stage = str(fd, 'stage', 30);
   if (!STAGES.some((s) => s.id === stage)) return;
   const data = { stage };
-  if (stage === 'proposta' && p.stage !== 'proposta') {
-    Object.assign(data, { proposalSentAt: new Date(), decision: null, decisionNote: null, decisionAt: null });
-  }
   await db.project.update({ where: { id: p.id }, data });
   await log(p.id, `${me.name} moveu o projeto para ${STAGES.find((s) => s.id === stage).name}`);
   back(p.id);
@@ -85,7 +82,7 @@ export async function updateProject(fd) {
 export async function regenerateLink(fd) {
   const { me, p } = await own(str(fd, 'id', 40));
   await db.project.update({ where: { id: p.id }, data: { token: newToken() } });
-  await log(p.id, `${me.name} gerou um novo link para a cliente`);
+  await log(p.id, `${me.name} gerou um novo link para o cliente`);
   back(p.id);
 }
 
@@ -121,9 +118,8 @@ export async function deleteMoodItem(fd) {
   back(item.projectId);
 }
 
-export async function savePresentation(fd) {
-  const { p } = await own(str(fd, 'id', 40));
-  const pres = {
+function presentationFromForm(fd) {
+  return {
     ...EMPTY_PRESENTATION,
     title: str(fd, 'title', 200),
     concept: str(fd, 'concept', 1000),
@@ -139,7 +135,36 @@ export async function savePresentation(fd) {
     closing: str(fd, 'closing', 120) || EMPTY_PRESENTATION.closing,
     cover: COVERS.some((c) => c.id === str(fd, 'cover', 20)) ? str(fd, 'cover', 20) : 'liso',
   };
-  await db.project.update({ where: { id: p.id }, data: { presentation: JSON.stringify(pres) } });
+}
+
+// Salva só o rascunho. O cliente continua vendo a última versão liberada (ou nada).
+export async function savePresentation(fd) {
+  const { p } = await own(str(fd, 'id', 40));
+  await db.project.update({ where: { id: p.id }, data: { presentation: JSON.stringify(presentationFromForm(fd)) } });
+  back(p.id);
+}
+
+// Salva e libera a apresentação para o cliente: tira uma foto do rascunho e dos arquivos
+// e move o projeto para a etapa Proposta, aguardando a resposta dele.
+export async function publishPresentation(fd) {
+  const { me, p } = await own(str(fd, 'id', 40));
+  const pres = presentationFromForm(fd);
+  const assets = await db.asset.findMany({ where: { projectId: p.id }, orderBy: { position: 'asc' } });
+  const snap = draftSnapshot({ presentation: JSON.stringify(pres), assets });
+  const last = await db.proposalVersion.findFirst({ where: { projectId: p.id }, orderBy: { number: 'desc' } });
+  const number = (last?.number || 0) + 1;
+  await db.proposalVersion.create({ data: { projectId: p.id, number, snapshot: JSON.stringify(snap) } });
+  await db.project.update({
+    where: { id: p.id },
+    data: {
+      presentation: JSON.stringify(pres),
+      publishedAt: new Date(),
+      stage: 'proposta',
+      proposalSentAt: new Date(),
+      decision: null, decisionNote: null, decisionAt: null,
+    },
+  });
+  await log(p.id, `${me.name} liberou a versão ${number} da proposta para o cliente`);
   back(p.id);
 }
 

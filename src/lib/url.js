@@ -1,4 +1,4 @@
-// Monta a URL de um arquivo enviado. Para a cliente, inclui o token do link.
+// Monta a URL de um arquivo enviado. Para o cliente, inclui o token do link.
 export function fileUrl(rel, token, opts = {}) {
   const q = new URLSearchParams();
   if (token) q.set('t', token);

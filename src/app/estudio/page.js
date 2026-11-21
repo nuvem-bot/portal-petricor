@@ -8,9 +8,9 @@ import NewProject from './NewProject';
 function note(p) {
   switch (p.stage) {
     case 'briefing': return p.briefingAt ? 'Briefing respondido' : 'Aguardando briefing';
-    case 'moodboard': return p.moodSentAt ? 'Feedback do moodboard chegou' : `Moodboard com a cliente`;
+    case 'moodboard': return p.moodSentAt ? 'Feedback do moodboard chegou' : `Moodboard com o cliente`;
     case 'criacao': return 'Em criação';
-    case 'proposta': return p.decision === 'ajustes' ? 'Cliente pediu ajustes' : 'Aguardando aprovação';
+    case 'proposta': return !p.publishedAt ? 'Proposta não liberada' : p.decision === 'ajustes' ? 'Cliente pediu ajustes' : 'Aguardando aprovação';
     case 'finalizacao': return 'Aprovada, finalizando';
     default: return 'Entregue';
   }
@@ -39,7 +39,7 @@ export default async function Dashboard() {
       <div className="kpis">
         <div className="kpi"><span className="label">Em andamento</span><b>{active.length}</b></div>
         <div className="kpi"><span className="label">Com você</span><b>{mine.length}</b></div>
-        <div className="kpi"><span className="label">Com a cliente</span><b>{theirs.length}</b></div>
+        <div className="kpi"><span className="label">Com o cliente</span><b>{theirs.length}</b></div>
         <div className="kpi"><span className="label">Entrega em 7 dias</span><b>{dueSoon}</b></div>
       </div>
 
@@ -50,7 +50,7 @@ export default async function Dashboard() {
             <ul className="events">{mine.map((p) => (
               <li key={p.id}><span className="sev cliente" /><Link href={`/estudio/projetos/${p.id}`}><b>{p.brandName}</b> · {note(p)}</Link><span className="when">{fmtDate(p.updatedAt)}</span></li>
             ))}</ul>
-          ) : <p className="empty">Tudo em dia. Os projetos aguardam as clientes.</p>}
+          ) : <p className="empty">Tudo em dia. Os projetos aguardam os clientes.</p>}
         </div>
         <div className="panel">
           <span className="label">Atividade recente</span>
@@ -58,7 +58,7 @@ export default async function Dashboard() {
             <ul className="events">{events.map((e) => (
               <li key={e.id}><span className={`sev ${e.actor}`} /><span><Link href={`/estudio/projetos/${e.project.id}`}><b>{e.project.brandName}</b></Link> <span className="muted">{e.text}</span></span><span className="when">{fmtDateTime(e.createdAt)}</span></li>
             ))}</ul>
-          ) : <p className="empty">As ações das clientes e da equipe aparecem aqui.</p>}
+          ) : <p className="empty">As ações dos clientes e da equipe aparecem aqui.</p>}
         </div>
       </div>
 

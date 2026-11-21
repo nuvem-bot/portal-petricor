@@ -49,7 +49,7 @@ export function newToken() {
   return crypto.randomBytes(18).toString('base64url');
 }
 
-// Projeto da cliente pelo link secreto. Retorna null se não existir.
+// Projeto do cliente pelo link secreto. Retorna null se não existir.
 export async function projectByToken(token) {
   if (!token || token.length < 16) return null;
   return db.project.findUnique({ where: { token } });

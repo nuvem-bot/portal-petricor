@@ -37,3 +37,27 @@ export const COVERS = [
 export const isHex = (v) => /^#[0-9a-fA-F]{6}$/.test(v || '');
 // Nome de fonte do Google Fonts: só letras, números e espaços
 export const safeFont = (v, d) => (/^[A-Za-z0-9 ]{2,40}$/.test(v || '') ? v : d);
+
+// Monta a apresentação a partir do rascunho e dos arquivos atuais do projeto.
+export function draftSnapshot(p) {
+  const assets = p.assets || [];
+  const logo = assets.find((a) => a.kind === 'logo');
+  const pattern = assets.find((a) => a.kind === 'grafismo');
+  return {
+    pres: parsePresentation(p.presentation),
+    logo: logo?.file || null,
+    pattern: pattern?.file || null,
+    mockups: assets.filter((a) => a.kind === 'mockup').map((a) => ({ file: a.file, label: a.label.replace(/\.[a-z0-9]+$/i, '') })),
+  };
+}
+
+// Lê a foto de uma versão liberada.
+export function versionSnapshot(v) {
+  if (!v) return null;
+  try {
+    const s = JSON.parse(v.snapshot);
+    return { ...s, pres: { ...EMPTY_PRESENTATION, ...s.pres } };
+  } catch {
+    return null;
+  }
+}
