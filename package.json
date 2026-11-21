@@ -1,0 +1,26 @@
+{
+  "name": "portal-petricor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start -p ${PORT:-3000}",
+    "db:migrate": "prisma migrate deploy",
+    "criar-designer": "node scripts/criar-designer.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "bcryptjs": "2.4.3",
+    "next": "14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "prisma": "5.22.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

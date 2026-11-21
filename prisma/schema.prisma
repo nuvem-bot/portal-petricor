@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Pessoa do estúdio que acessa o painel
+model Designer {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  projects     Project[]
+  createdAt    DateTime  @default(now())
+}
+
+// Um projeto de identidade visual de uma cliente
+model Project {
+  id          String    @id @default(cuid())
+  brandName   String
+  clientName  String
+  clientEmail String?
+  // Chave secreta do link da cliente (/p/<token>)
+  token       String    @unique
+  // briefing | moodboard | criacao | proposta | finalizacao | entrega | concluido
+  stage       String    @default("briefing")
+  dueDate     DateTime?
+  designer    Designer? @relation(fields: [designerId], references: [id])
+  designerId  String?
+
+  // Briefing: respostas em JSON ({ pergunta_id: resposta })
+  briefing    String?
+  briefingAt  DateTime?
+  moodSentAt  DateTime?
+
+  // Proposta: dados da apresentação em JSON (conceito, paleta, tipografia)
+  presentation String?
+  proposalSentAt DateTime?
+  // null | aprovado | ajustes
+  decision     String?
+  decisionNote String?
+  decisionAt   DateTime?
+  roundsIncluded Int     @default(2)
+  roundsUsed     Int     @default(0)
+
+  moodItems   MoodItem[]
+  assets      Asset[]
+  events      Event[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Imagem do moodboard com a reação da cliente
+model MoodItem {
+  id        String   @id @default(cuid())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  file      String
+  caption   String?
+  position  Int      @default(0)
+  // null | gostei | nao
+  reaction  String?
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+// Arquivos da proposta (logo, mockups) e da entrega final
+model Asset {
+  id        String   @id @default(cuid())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  // logo | mockup | entrega
+  kind      String
+  label     String
+  file      String
+  size      Int      @default(0)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// Histórico do projeto (quem fez o quê)
+model Event {
+  id        String   @id @default(cuid())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  // cliente | estudio
+  actor     String
+  text      String
+  createdAt DateTime @default(now())
+}
