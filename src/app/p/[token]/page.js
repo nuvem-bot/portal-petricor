@@ -13,7 +13,7 @@ function nextStep(p, base) {
     case 'moodboard':
       return p.moodSentAt
         ? { who: 'estudio', h: 'Feedback recebido!', t: `${name} vai usar seus comentários para começar a criação.` }
-        : { who: 'cliente', h: 'O moodboard está pronto.', t: 'Marque o que gostou e o que não gostou em cada imagem. Um comentário curto ajuda muito.', cta: 'Ver moodboard', href: `${base}/moodboard` };
+        : { who: 'cliente', h: 'O moodboard está pronto.', t: 'Em cada imagem, escreva o que gostou e o que não gostou. Pode ser bem curto.', cta: 'Ver moodboard', href: `${base}/moodboard` };
     case 'criacao':
       return { who: 'estudio', h: `${name} está desenhando a sua marca.`, t: 'Nesta fase você não precisa fazer nada. Você recebe a proposta aqui.' };
     case 'proposta':

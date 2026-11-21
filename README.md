@@ -2,8 +2,8 @@
 
 Portal de entrega de identidade visual da Petricor. Substitui o Respondi (briefing) e o Notion (moodboard) e junta todo o processo num lugar só, com duas visões:
 
-- **Estúdio** (`/estudio`): painel da designer, com login. Mostra os projetos por etapa, o que está com a designer e o que está com a cliente, e a atividade recente. Dentro de cada projeto: briefing recebido, moodboard (upload e feedback da cliente), proposta (logo, mockups, conceito, paleta, tipografia), arquivos de entrega e histórico.
-- **Cliente** (`/p/<link secreto>`): sem senha, pelo link que a designer envia. A cliente responde o briefing, comenta cada imagem do moodboard, assiste à apresentação da marca em tela cheia, aprova ou pede ajustes e baixa os arquivos finais.
+- **Estúdio** (`/estudio`): painel da designer, com login. Mostra os projetos por etapa, o que está com a designer e o que está com a cliente, e a atividade recente. Dentro de cada projeto: briefing recebido, moodboard (upload e o que a cliente gostou e não gostou em cada imagem), proposta (logo, mockups, conceito, paleta, tipografia), arquivos de entrega e histórico.
+- **Cliente** (`/p/<link secreto>`): sem senha, pelo link que a designer envia. A cliente responde o briefing, escreve o que gostou e o que não gostou em cada imagem do moodboard, assiste à apresentação da marca em tela cheia, aprova ou pede ajustes e baixa os arquivos finais.
 
 ## Etapas
 

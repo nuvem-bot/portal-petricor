@@ -61,9 +61,9 @@ model MoodItem {
   file      String
   caption   String?
   position  Int      @default(0)
-  // null | gostei | nao
-  reaction  String?
-  comment   String?
+  // O que a cliente gostou e não gostou nesta imagem (os dois são obrigatórios para enviar)
+  liked     String?
+  disliked  String?
   createdAt DateTime @default(now())
 }
 

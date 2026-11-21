@@ -30,29 +30,28 @@ export async function saveBriefing(_, fd) {
   return { ok: final ? 'Briefing enviado. A designer já foi avisada.' : 'Rascunho salvo.' };
 }
 
-export async function reactMood(fd) {
+export async function saveMoodNote(fd) {
   const p = await project(fd);
   const item = await db.moodItem.findUnique({ where: { id: str(fd, 'itemId', 40) } });
   if (!item || item.projectId !== p.id || p.moodSentAt) return;
-  const r = str(fd, 'reaction', 10);
-  await db.moodItem.update({
-    where: { id: item.id },
-    data: {
-      reaction: ['gostei', 'nao'].includes(r) ? r : null,
-      ...(fd.has('comment') ? { comment: str(fd, 'comment', 600) || null } : {}),
-    },
-  });
+  const data = {};
+  if (fd.has('liked')) data.liked = str(fd, 'liked', 600) || null;
+  if (fd.has('disliked')) data.disliked = str(fd, 'disliked', 600) || null;
+  await db.moodItem.update({ where: { id: item.id }, data });
 }
 
 export async function sendMood(fd) {
   const p = await project(fd);
   if (p.moodSentAt) return { error: 'O feedback já foi enviado.' };
   const items = await db.moodItem.findMany({ where: { projectId: p.id } });
-  const pending = items.filter((i) => !i.reaction).length;
-  if (pending) return { error: pending === 1 ? "Ainda falta 1 imagem." : `Ainda faltam ${pending} imagens.` };
+  const pending = items.filter((i) => !i.liked || !i.disliked).length;
+  if (pending) {
+    return { error: pending === 1
+      ? 'Falta escrever o que gostou e o que não gostou em 1 imagem.'
+      : `Falta escrever o que gostou e o que não gostou em ${pending} imagens.` };
+  }
   await db.project.update({ where: { id: p.id }, data: { moodSentAt: new Date() } });
-  const liked = items.filter((i) => i.reaction === 'gostei').length;
-  await log(p.id, `${p.clientName} enviou o feedback do moodboard (${liked} gostei, ${items.length - liked} não)`);
+  await log(p.id, `${p.clientName} enviou o feedback do moodboard (${items.length} imagens comentadas)`);
   revalidatePath(`/p/${p.token}`, 'layout');
   return { ok: true };
 }

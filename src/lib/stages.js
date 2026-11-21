@@ -1,7 +1,7 @@
 // As etapas do processo de identidade visual da Petricor, na ordem.
 export const STAGES = [
   { id: 'briefing', name: 'Briefing', client: 'Você conta sobre a marca', studio: 'Aguardando respostas da cliente' },
-  { id: 'moodboard', name: 'Moodboard', client: 'Você comenta cada referência', studio: 'Montar moodboard e receber feedback' },
+  { id: 'moodboard', name: 'Moodboard', client: 'Você diz o que gostou e não gostou em cada referência', studio: 'Montar moodboard e receber feedback' },
   { id: 'criacao', name: 'Criação', client: 'A designer está desenhando', studio: 'Desenhar a identidade' },
   { id: 'proposta', name: 'Proposta', client: 'Você vê a apresentação e aprova', studio: 'Proposta com a cliente' },
   { id: 'finalizacao', name: 'Finalização', client: 'Manual e arquivos finais', studio: 'Fechar manual e exportar arquivos' },

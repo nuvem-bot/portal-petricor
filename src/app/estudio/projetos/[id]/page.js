@@ -27,8 +27,7 @@ export default async function ProjectPage({ params }) {
   const brief = parseBriefing(p.briefing);
   const pres = parsePresentation(p.presentation);
   const cur = stageIndex(p.stage);
-  const liked = p.moodItems.filter((m) => m.reaction === 'gostei').length;
-  const answered = p.moodItems.filter((m) => m.reaction).length;
+  const answered = p.moodItems.filter((m) => m.liked && m.disliked).length;
   const logos = p.assets.filter((a) => a.kind === 'logo');
   const mockups = p.assets.filter((a) => a.kind === 'mockup');
   const delivery = p.assets.filter((a) => a.kind === 'entrega');
@@ -84,7 +83,7 @@ export default async function ProjectPage({ params }) {
           <section className="panel" id="moodboard">
             <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
               <span className="label">Moodboard</span>
-              {p.moodItems.length > 0 && <span className={`pill ${p.moodSentAt ? 'ok' : 'wait'}`}>{p.moodSentAt ? `Feedback enviado · ${liked} gostei, ${answered - liked} não` : `${answered} de ${p.moodItems.length} respondidas`}</span>}
+              {p.moodItems.length > 0 && <span className={`pill ${p.moodSentAt ? 'ok' : 'wait'}`}>{p.moodSentAt ? `Feedback enviado ${fmtDate(p.moodSentAt)}` : `${answered} de ${p.moodItems.length} comentadas`}</span>}
             </div>
             <form action={addMoodItems} className="row" style={{ marginBottom: 16 }}>
               <input type="hidden" name="id" value={p.id} />
@@ -94,21 +93,21 @@ export default async function ProjectPage({ params }) {
             {p.moodItems.length ? (
               <div className="thumbs">
                 {p.moodItems.map((m) => (
-                  <div className="thumb" key={m.id} style={{ borderColor: m.reaction === 'gostei' ? 'var(--ok)' : m.reaction === 'nao' ? 'var(--bad)' : undefined }}>
+                  <div className="thumb" key={m.id}>
                     <div className="im"><img src={fileUrl(m.file)} alt={m.caption || 'Referência'} loading="lazy" /></div>
                     <div className="tb">
                       <form action={updateMoodCaption} className="row" style={{ gap: 4 }}>
                         <input type="hidden" name="itemId" value={m.id} />
                         <input className="input" name="caption" defaultValue={m.caption || ''} placeholder="Legenda" aria-label="Legenda" style={{ flex: 1, minWidth: 0 }} />
                       </form>
-                      {m.reaction && <span className={`pill ${m.reaction === 'gostei' ? 'ok' : 'bad'}`}>{m.reaction === 'gostei' ? 'gostou' : 'não gostou'}</span>}
-                      {m.comment && <small className="muted">“{m.comment}”</small>}
+                      {m.liked && <small><b style={{ color: 'var(--ok)' }}>Gostou:</b> {m.liked}</small>}
+                      {m.disliked && <small><b style={{ color: 'var(--bad)' }}>Não gostou:</b> {m.disliked}</small>}
                       <form action={deleteMoodItem}><input type="hidden" name="itemId" value={m.id} /><button className="linkbtn" type="submit">Remover</button></form>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : <p className="empty">Adicione as referências. A cliente marca gostei ou não gostei e comenta cada uma.</p>}
+            ) : <p className="empty">Adicione as referências. Em cada uma, a cliente escreve o que gostou e o que não gostou.</p>}
             <p className="muted small" style={{ marginTop: 10 }}>Para salvar a legenda, digite e aperte Enter.</p>
           </section>
 

@@ -1,49 +1,64 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { reactMood, sendMood } from '@/lib/actions-client';
+import { saveMoodNote, sendMood } from '@/lib/actions-client';
 
 export default function MoodBoard({ token, items: initial, locked }) {
   const [items, setItems] = useState(initial);
+  const [saved, setSaved] = useState(initial);
   const [msg, setMsg] = useState(null);
+  const [tried, setTried] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();
 
-  function save(item, patch) {
-    const next = { ...item, ...patch };
-    setItems((all) => all.map((i) => (i.id === item.id ? next : i)));
+  const edit = (id, field, value) => setItems((all) => all.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
+
+  function persist(item, field) {
+    const prev = saved.find((s) => s.id === item.id);
+    if (prev && prev[field] === item[field]) return Promise.resolve();
     const fd = new FormData();
-    fd.set('token', token); fd.set('itemId', item.id); fd.set('reaction', next.reaction || '');
-    if ('comment' in patch) fd.set('comment', next.comment || '');
-    reactMood(fd).catch(() => setMsg({ error: 'Não consegui salvar. Confira sua conexão.' }));
+    fd.set('token', token); fd.set('itemId', item.id); fd.set(field, item[field]);
+    return saveMoodNote(fd)
+      .then(() => setSaved((all) => all.map((s) => (s.id === item.id ? { ...s, [field]: item[field] } : s))))
+      .catch(() => setMsg({ error: 'Não consegui salvar. Confira sua conexão.' }));
   }
 
-  const done = items.filter((i) => i.reaction).length;
-  const liked = items.filter((i) => i.reaction === 'gostei').length;
+  const complete = (i) => i.liked.trim() && i.disliked.trim();
+  const done = items.filter(complete).length;
 
   return (
     <>
       <div className="mood">
-        {items.map((m, idx) => (
-          <article key={m.id} className={`tile ${m.reaction === 'gostei' ? 'liked' : m.reaction === 'nao' ? 'disliked' : ''}`}>
-            <div className="img"><img src={m.src} alt={m.caption || `Referência ${idx + 1}`} loading="lazy" /></div>
-            <div className="tbody">
-              {m.caption && <p className="small muted">{m.caption}</p>}
-              <div className="react">
-                <button type="button" className="yes" disabled={locked} aria-pressed={m.reaction === 'gostei'} onClick={() => save(m, { reaction: m.reaction === 'gostei' ? null : 'gostei' })}>Gostei</button>
-                <button type="button" className="no" disabled={locked} aria-pressed={m.reaction === 'nao'} onClick={() => save(m, { reaction: m.reaction === 'nao' ? null : 'nao' })}>Não gostei</button>
+        {items.map((m, idx) => {
+          const ok = complete(m);
+          const miss = tried && !ok;
+          return (
+            <article key={m.id} className={`tile ${ok ? 'liked' : miss ? 'disliked' : ''}`}>
+              <div className="img"><img src={m.src} alt={m.caption || `Referência ${idx + 1}`} loading="lazy" /></div>
+              <div className="tbody">
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="label">{String(idx + 1).padStart(2, '0')}{m.caption ? ` · ${m.caption}` : ''}</span>
+                  {ok && <span className="pill ok">ok</span>}
+                </div>
+                <label className="small" htmlFor={`l-${m.id}`} style={{ fontWeight: 600, color: 'var(--ok)' }}>Gostei de…</label>
+                <textarea id={`l-${m.id}`} value={m.liked} disabled={locked} required placeholder="Ex.: da cor, da fonte"
+                  onChange={(e) => edit(m.id, 'liked', e.target.value)} onBlur={() => persist(m, 'liked')}
+                  aria-invalid={miss && !m.liked.trim()} />
+                <label className="small" htmlFor={`d-${m.id}`} style={{ fontWeight: 600, color: 'var(--bad)' }}>Não gostei de…</label>
+                <textarea id={`d-${m.id}`} value={m.disliked} disabled={locked} required placeholder="Ex.: da textura"
+                  onChange={(e) => edit(m.id, 'disliked', e.target.value)} onBlur={() => persist(m, 'disliked')}
+                  aria-invalid={miss && !m.disliked.trim()} />
               </div>
-              <label className="small" htmlFor={`c-${m.id}`}>Por quê?</label>
-              <textarea id={`c-${m.id}`} defaultValue={m.comment || ''} disabled={locked} placeholder="Opcional"
-                onBlur={(e) => { if (e.target.value !== (m.comment || '')) save(m, { comment: e.target.value }); }} />
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
       {!locked && (
         <div className="stickybar">
-          <span className="small">{done ? `${liked} gostei · ${done - liked} não gostei · faltam ${items.length - done}` : 'Responda as imagens para enviar.'}</span>
+          <span className="small">{done} de {items.length} imagens comentadas</span>
           <button className="btn primary" type="button" disabled={pending} onClick={() => start(async () => {
+            setTried(true);
+            await Promise.all(items.flatMap((i) => [persist(i, 'liked'), persist(i, 'disliked')]));
             const fd = new FormData(); fd.set('token', token);
             const r = await sendMood(fd);
             setMsg(r);
