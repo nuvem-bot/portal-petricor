@@ -94,7 +94,7 @@ export default async function ProjectPage({ params }) {
               <div className="thumbs">
                 {p.moodItems.map((m) => (
                   <div className="thumb" key={m.id}>
-                    <div className="im"><img src={fileUrl(m.file)} alt={m.caption || 'Referência'} loading="lazy" /></div>
+                    <a className="im" href={fileUrl(m.file)} target="_blank" rel="noopener" title="Abrir em tamanho real" style={{ display: "block", cursor: "zoom-in" }}><img src={fileUrl(m.file)} alt={m.caption || "Referência"} loading="lazy" /></a>
                     <div className="tb">
                       <form action={updateMoodCaption} className="row" style={{ gap: 4 }}>
                         <input type="hidden" name="itemId" value={m.id} />

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { saveMoodNote, sendMood } from '@/lib/actions-client';
 
@@ -10,6 +10,19 @@ export default function MoodBoard({ token, items: initial, locked }) {
   const [tried, setTried] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();
+  const [zoom, setZoom] = useState(null); // índice da imagem ampliada
+
+  useEffect(() => {
+    if (zoom === null) return;
+    const key = (e) => {
+      if (e.key === 'Escape') setZoom(null);
+      if (e.key === 'ArrowRight') setZoom((z) => (z + 1) % items.length);
+      if (e.key === 'ArrowLeft') setZoom((z) => (z - 1 + items.length) % items.length);
+    };
+    window.addEventListener('keydown', key);
+    document.documentElement.style.overflow = 'hidden';
+    return () => { window.removeEventListener('keydown', key); document.documentElement.style.overflow = ''; };
+  }, [zoom, items.length]);
 
   const edit = (id, field, value) => setItems((all) => all.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
 
@@ -34,7 +47,10 @@ export default function MoodBoard({ token, items: initial, locked }) {
           const miss = tried && !ok;
           return (
             <article key={m.id} className={`tile ${ok ? 'liked' : miss ? 'disliked' : ''}`}>
-              <div className="img"><img src={m.src} alt={m.caption || `Referência ${idx + 1}`} loading="lazy" /></div>
+              <button type="button" className="img zoomable" onClick={() => setZoom(idx)} aria-label={`Ampliar referência ${idx + 1}`}>
+                <img src={m.src} alt={m.caption || `Referência ${idx + 1}`} loading="lazy" />
+                <span className="zoom-hint" aria-hidden="true">⤢ ampliar</span>
+              </button>
               <div className="tbody">
                 <div className="row" style={{ justifyContent: 'space-between' }}>
                   <span className="label">{String(idx + 1).padStart(2, '0')}{m.caption ? ` · ${m.caption}` : ''}</span>
@@ -67,6 +83,19 @@ export default function MoodBoard({ token, items: initial, locked }) {
         </div>
       )}
       {msg?.error && <p className="msg-err" role="alert" style={{ marginTop: 12 }}>{msg.error}</p>}
+      {zoom !== null && (
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label={`Referência ${zoom + 1} de ${items.length}`} onClick={() => setZoom(null)}>
+          <img src={items[zoom].src} alt={items[zoom].caption || `Referência ${zoom + 1}`} onClick={(e) => e.stopPropagation()} />
+          <div className="lb-bar" onClick={(e) => e.stopPropagation()}>
+            <span>{String(zoom + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}{items[zoom].caption ? ` · ${items[zoom].caption}` : ''}</span>
+          </div>
+          {items.length > 1 && <>
+            <button type="button" className="lb-nav prev" aria-label="Imagem anterior" onClick={(e) => { e.stopPropagation(); setZoom((zoom - 1 + items.length) % items.length); }}>‹</button>
+            <button type="button" className="lb-nav next" aria-label="Próxima imagem" onClick={(e) => { e.stopPropagation(); setZoom((zoom + 1) % items.length); }}>›</button>
+          </>}
+          <button type="button" className="lb-close" aria-label="Fechar" onClick={() => setZoom(null)} autoFocus>Fechar ✕</button>
+        </div>
+      )}
       {locked && <p className="msg-ok" style={{ marginTop: 20 }}>Feedback enviado. Obrigado! A designer já está usando seus comentários.</p>}
     </>
   );
