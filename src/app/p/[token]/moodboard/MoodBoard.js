@@ -79,7 +79,7 @@ export default function MoodBoard({ token, items: initial, locked }) {
             const r = await sendMood(fd);
             setMsg(r);
             if (r?.ok) router.refresh();
-          })}>{pending ? 'Enviando…' : 'Enviar para a designer'}</button>
+          })}>{pending ? 'Enviando…' : 'Enviar'}</button>
         </div>
       )}
       {msg?.error && <p className="msg-err" role="alert" style={{ marginTop: 12 }}>{msg.error}</p>}

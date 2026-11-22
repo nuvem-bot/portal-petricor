@@ -43,7 +43,7 @@ export default async function Briefing({ params }) {
             </div>
           ))}
           <div className="row">
-            <Submit name="enviar" value="1" pendingText="Enviando…">{p.briefingAt ? 'Atualizar respostas' : 'Enviar briefing'}</Submit>
+            <Submit name="enviar" value="1" pendingText="Enviando…">{p.briefingAt ? 'Atualizar respostas' : 'Enviar'}</Submit>
             <Submit className="btn ghost" name="enviar" value="0">Salvar rascunho</Submit>
           </div>
         </StateForm>
