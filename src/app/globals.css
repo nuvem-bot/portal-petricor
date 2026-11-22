@@ -161,3 +161,16 @@ details.danger summary{cursor:pointer;color:var(--bad);font-size:13px}
 .lb-nav{position:fixed;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);font-size:28px;line-height:1;cursor:pointer;display:grid;place-items:center}
 .lb-nav.prev{left:max(12px,env(safe-area-inset-left,0px))}
 .lb-nav.next{right:max(12px,env(safe-area-inset-right,0px))}
+
+/* Configurações: acessos */
+.access-types{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.access-types li{display:grid;grid-template-columns:90px 1fr;gap:12px;align-items:baseline}
+.people{list-style:none;margin:0;padding:0}
+.people li{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px;padding:14px 0;border-top:1px solid var(--line)}
+.people li:first-child{border-top:0}
+.people li.off > div:first-child{opacity:.55}
+.people-link{flex-basis:100%}
+details.inline summary{cursor:pointer;list-style:none}
+details.inline summary::-webkit-details-marker{display:none}
+details.inline[open]{flex-basis:100%}
+@media (max-width:600px){.access-types li{grid-template-columns:1fr;gap:2px}}

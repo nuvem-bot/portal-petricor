@@ -36,12 +36,23 @@ export async function currentDesigner() {
   const expected = sign(`${id}.${exp}`);
   if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
   if (Number(exp) < Date.now() / 1000) return null;
-  return db.designer.findUnique({ where: { id }, select: { id: true, name: true, email: true } });
+  const d = await db.designer.findUnique({ where: { id }, select: { id: true, name: true, email: true, role: true, active: true, sessionsFrom: true } });
+  if (!d || !d.active) return null;
+  const issuedAt = (Number(exp) - MAX_AGE) * 1000;
+  if (d.sessionsFrom && issuedAt < Math.floor(d.sessionsFrom.getTime() / 1000) * 1000) return null;
+  return d;
 }
 
 export async function requireDesigner() {
   const d = await currentDesigner();
   if (!d) redirect('/login');
+  return d;
+}
+
+// Só a adm passa. Quem é da equipe volta para o painel.
+export async function requireAdmin() {
+  const d = await requireDesigner();
+  if (d.role !== 'adm') redirect('/estudio');
   return d;
 }
 
@@ -52,5 +63,6 @@ export function newToken() {
 // Projeto do cliente pelo link secreto. Retorna null se não existir.
 export async function projectByToken(token) {
   if (!token || token.length < 16) return null;
-  return db.project.findUnique({ where: { token } });
+  const p = await db.project.findUnique({ where: { token } });
+  return p && p.clientAccess ? p : null;
 }

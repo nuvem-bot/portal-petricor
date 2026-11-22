@@ -1,5 +1,5 @@
 import 'server-only';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
 import { db } from './db';
 
@@ -16,5 +16,7 @@ export const loadClientProject = cache(async (token) => {
     },
   });
   if (!p) notFound();
+  // Acesso pausado pela adm: não mostra nada do projeto
+  if (!p.clientAccess) redirect('/acesso-pausado');
   return p;
 });

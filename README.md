@@ -48,9 +48,16 @@ sed -i "s/troque-por-um-segredo-longo/$(openssl rand -hex 32)/" .env
 npm ci
 npx prisma migrate deploy
 npm run build
-npm run criar-designer -- "Nome da designer" email@estudiopetricor.com.br
+npm run criar-designer -- "Seu nome" voce@estudiopetricor.com.br   # primeiro acesso, entra como adm
 pm2 start deploy/ecosystem.config.cjs && pm2 save && pm2 startup
 ```
+
+Depois disso, a adm libera os acessos da equipe pelo próprio painel, em **Configurações**.
+
+### Tipos de acesso
+- **Adm**: trabalha nos projetos, libera e desativa acessos da equipe, pausa links de cliente e exclui projetos.
+- **Equipe**: trabalha em todos os projetos. Não vê Configurações e não exclui projetos.
+- **Cliente**: sem senha, entra só pelo link do próprio projeto. A adm pode pausar ou trocar o link.
 
 **4. Nginx e HTTPS:**
 

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
+import { requireDesigner } from '@/lib/auth';
 import { STAGES, stageIndex, whoActs } from '@/lib/stages';
 import { QUESTIONS, parseBriefing } from '@/lib/briefing';
 import { parsePresentation, COVERS } from '@/lib/presentation';
@@ -23,6 +24,7 @@ export default async function ProjectPage({ params }) {
     },
   });
   if (!p) notFound();
+  const me = await requireDesigner();
   const base = process.env.PUBLIC_URL || '';
   const link = `${base}/p/${p.token}`;
   const brief = parseBriefing(p.briefing);
@@ -227,6 +229,7 @@ export default async function ProjectPage({ params }) {
         <div className="stack">
           <section className="panel">
             <span className="label">Link do cliente</span>
+            {!p.clientAccess && <p className="msg-err">O acesso do cliente está pausado. {me.role === 'adm' ? <Link href="/estudio/configuracoes">Liberar em Configurações</Link> : 'Fale com a adm para liberar.'}</p>}
             <CopyLink url={link} />
             <p className="muted small" style={{ marginTop: 10 }}>Quem tiver este link vê o projeto. Envie só para o cliente.</p>
             <form action={regenerateLink} style={{ marginTop: 8 }}><input type="hidden" name="id" value={p.id} /><button className="linkbtn" type="submit">Gerar novo link (o anterior para de funcionar)</button></form>
@@ -260,14 +263,14 @@ export default async function ProjectPage({ params }) {
               <p className="muted small">Rodadas usadas: {p.roundsUsed}</p>
               <div><Submit className="btn sm">Salvar dados</Submit></div>
             </form>
-            <details className="danger" style={{ marginTop: 20 }}>
+            {me.role === 'adm' && <details className="danger" style={{ marginTop: 20 }}>
               <summary>Excluir projeto</summary>
               <form action={deleteProject} className="form" style={{ marginTop: 10 }}>
                 <input type="hidden" name="id" value={p.id} />
                 <div className="field"><label htmlFor="del">Digite “{p.brandName}” para confirmar. Isso apaga o projeto e todos os arquivos.</label><input id="del" name="confirm" autoComplete="off" /></div>
                 <div><button className="btn sm danger" type="submit">Excluir de vez</button></div>
               </form>
-            </details>
+            </details>}
           </section>
         </div>
       </div>

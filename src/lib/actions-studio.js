@@ -18,6 +18,7 @@ export async function login(_, fd) {
   if (!d || !(await bcrypt.compare(str(fd, 'senha', 200), d.passwordHash))) {
     return { error: 'E-mail ou senha incorretos.' };
   }
+  if (!d.active) return { error: 'Seu acesso está desativado. Fale com a administração do estúdio.' };
   startSession(d.id);
   redirect('/estudio');
 }
@@ -206,7 +207,8 @@ export async function postNote(fd) {
 }
 
 export async function deleteProject(fd) {
-  const { p } = await own(str(fd, 'id', 40));
+  const { me, p } = await own(str(fd, 'id', 40));
+  if (me.role !== 'adm') return;
   if (str(fd, 'confirm', 200) !== p.brandName) return;
   const files = [...(await db.moodItem.findMany({ where: { projectId: p.id } })), ...(await db.asset.findMany({ where: { projectId: p.id } }))];
   await db.project.delete({ where: { id: p.id } });

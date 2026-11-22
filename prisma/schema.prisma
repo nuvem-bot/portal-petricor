@@ -13,6 +13,12 @@ model Designer {
   name         String
   email        String    @unique
   passwordHash String
+  // adm (libera acessos e mexe nas configurações) | equipe (trabalha nos projetos)
+  role         String    @default("equipe")
+  // Acesso liberado? Quem está desativado não consegue entrar.
+  active       Boolean   @default(true)
+  // Sessões abertas antes disso não valem mais (ao desativar ou trocar a senha)
+  sessionsFrom DateTime?
   projects     Project[]
   createdAt    DateTime  @default(now())
 }
@@ -25,6 +31,8 @@ model Project {
   clientEmail String?
   // Chave secreta do link da cliente (/p/<token>)
   token       String    @unique
+  // O cliente consegue abrir o link? A adm pode pausar o acesso.
+  clientAccess Boolean  @default(true)
   // briefing | moodboard | criacao | proposta | finalizacao | entrega | concluido
   stage       String    @default("briefing")
   dueDate     DateTime?
