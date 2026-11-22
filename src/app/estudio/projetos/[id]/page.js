@@ -75,7 +75,7 @@ export default async function ProjectPage({ params }) {
                 {QUESTIONS.map((q) => {
                   const a = brief[q.id];
                   const v = Array.isArray(a) ? a.join(', ') : a;
-                  return <div key={q.id} style={{ marginBottom: 14 }}><dt style={{ fontWeight: 600, fontSize: 13 }}>{q.label}</dt><dd className="muted" style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{v || '—'}</dd></div>;
+                  return <div key={q.id} style={{ marginBottom: 14 }}>{q.section && <div className="label" style={{ margin: '18px 0 8px' }}>{q.section}</div>}<dt style={{ fontWeight: 600, fontSize: 13 }}>{q.label}</dt><dd className="muted" style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{v || '—'}</dd></div>;
                 })}
               </dl>
             ) : <p className="empty">O cliente responde pelo link. As respostas aparecem aqui.</p>}
