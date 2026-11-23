@@ -73,7 +73,9 @@ nginx -t && systemctl reload nginx
 
 # Backup diário às 3h30
 chmod +x deploy/backup.sh
-( crontab -l 2>/dev/null | grep -v portal-petricor/deploy/backup.sh; echo "30 3 * * * $APP/deploy/backup.sh" ) | crontab -
+# (mantém as outras linhas do crontab; o "|| true" evita apagar tudo quando ainda não há crontab)
+ATUAL=$(crontab -l 2>/dev/null | grep -v portal-petricor/deploy/backup.sh || true)
+printf '%s\n30 3 * * * %s/deploy/backup.sh\n' "$ATUAL" "$APP" | sed '/^$/d' | crontab -
 
 sleep 3
 curl -s -o /dev/null -w "Portal respondendo: HTTP %{http_code}\n" http://127.0.0.1:$PORT/login
