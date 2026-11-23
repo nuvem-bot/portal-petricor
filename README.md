@@ -77,7 +77,7 @@ certbot --nginx -d portal.estudiopetricor.com.br
 ### Atualizar depois de mudanças
 
 ```bash
-cd /var/www/portal-petricor && git pull && npm ci && npx prisma migrate deploy && npm run build && pm2 restart portal-petricor
+bash /var/www/portal-petricor/deploy/instalar.sh
 ```
 
 ## Mudar o conteúdo
