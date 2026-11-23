@@ -9,9 +9,12 @@ import { fileUrl, fmtDate, fmtDateTime, fmtSize } from '@/lib/url';
 import {
   setStage, regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation, publishPresentation,
   addAssets, deleteAsset, postNote, updateProject, deleteProject,
+  studioSaveBriefing, studioMoodNote, studioMoodReceived,
 } from '@/lib/actions-studio';
 import Submit from '@/components/Submit';
 import CopyLink from '@/components/CopyLink';
+import StateForm from '@/components/StateForm';
+import BriefingFields from '@/components/BriefingFields';
 
 export default async function ProjectPage({ params }) {
   const p = await db.project.findUnique({
@@ -35,6 +38,7 @@ export default async function ProjectPage({ params }) {
   const mockups = p.assets.filter((a) => a.kind === 'mockup');
   const grafismos = p.assets.filter((a) => a.kind === 'grafismo');
   const delivery = p.assets.filter((a) => a.kind === 'entrega');
+  const briefFiles = p.assets.filter((a) => a.kind === 'briefing');
   const w = whoActs(p);
 
   return (
@@ -81,6 +85,17 @@ export default async function ProjectPage({ params }) {
                 })}
               </dl>
             ) : <p className="empty">O cliente responde pelo link. As respostas aparecem aqui.</p>}
+            {briefFiles.length > 0 && <div style={{ marginTop: 12 }}><span className="label">Arquivos do briefing</span><AssetList items={briefFiles} download /></div>}
+            <details className="upload-existing" style={{ marginTop: 16 }}>
+              <summary className="btn sm ghost">{Object.keys(brief).length ? 'Editar respostas / anexar arquivo' : 'Subir briefing que o cliente já respondeu'}</summary>
+              <p className="muted small" style={{ margin: '10px 0' }}>Para clientes que responderam fora do portal (por exemplo, no Respondi). Anexe o PDF e, se quiser, copie as respostas para os campos. Ao salvar, o briefing conta como recebido.</p>
+              <StateForm action={studioSaveBriefing}>
+                <input type="hidden" name="id" value={p.id} />
+                <div className="field"><label htmlFor="sb-arquivos">PDF ou imagens do briefing</label><input id="sb-arquivos" type="file" name="arquivos" accept="application/pdf,image/*" multiple /></div>
+                <BriefingFields answers={{ nome: p.clientName, email: p.clientEmail || '', marca: p.brandName, ...brief }} prefix="sb" />
+                <div><Submit>Salvar briefing</Submit></div>
+              </StateForm>
+            </details>
           </section>
 
           {/* MOODBOARD */}
@@ -104,8 +119,21 @@ export default async function ProjectPage({ params }) {
                         <input type="hidden" name="itemId" value={m.id} />
                         <input className="input" name="caption" defaultValue={m.caption || ''} placeholder="Legenda" aria-label="Legenda" style={{ flex: 1, minWidth: 0 }} />
                       </form>
-                      {m.liked && <small><b style={{ color: 'var(--ok)' }}>Gostou:</b> {m.liked}</small>}
-                      {m.disliked && <small><b style={{ color: 'var(--bad)' }}>Não gostou:</b> {m.disliked}</small>}
+                      {p.moodSentAt || m.liked || m.disliked ? <>
+                        {m.liked && <small><b style={{ color: 'var(--ok)' }}>Gostou:</b> {m.liked}</small>}
+                        {m.disliked && <small><b style={{ color: 'var(--bad)' }}>Não gostou:</b> {m.disliked}</small>}
+                      </> : null}
+                      {!p.moodSentAt && (
+                        <details>
+                          <summary className="linkbtn">{m.liked || m.disliked ? 'Editar comentário' : 'Já tenho o comentário'}</summary>
+                          <form action={studioMoodNote} className="form" style={{ gap: 6, marginTop: 6 }}>
+                            <input type="hidden" name="itemId" value={m.id} />
+                            <textarea className="input" name="liked" defaultValue={m.liked || ''} placeholder="Gostou de…" aria-label="O cliente gostou de" rows={2} />
+                            <textarea className="input" name="disliked" defaultValue={m.disliked || ''} placeholder="Não gostou de…" aria-label="O cliente não gostou de" rows={2} />
+                            <Submit className="btn sm">Salvar</Submit>
+                          </form>
+                        </details>
+                      )}
                       <form action={deleteMoodItem}><input type="hidden" name="itemId" value={m.id} /><button className="linkbtn" type="submit">Remover</button></form>
                     </div>
                   </div>
@@ -113,6 +141,13 @@ export default async function ProjectPage({ params }) {
               </div>
             ) : <p className="empty">Adicione as referências. Em cada uma, o cliente escreve o que gostou e o que não gostou.</p>}
             <p className="muted small" style={{ marginTop: 10 }}>Para salvar a legenda, digite e aperte Enter.</p>
+            {p.moodItems.length > 0 && !p.moodSentAt && (
+              <form action={studioMoodReceived} className="row" style={{ marginTop: 12, gap: 12 }}>
+                <input type="hidden" name="id" value={p.id} />
+                <button className="btn sm ghost" type="submit">Marcar feedback como recebido</button>
+                <span className="muted small">Use quando o cliente já comentou o moodboard fora do portal (por exemplo, no Notion). Suba as imagens, registre os comentários em “Já tenho o comentário” e marque aqui.</span>
+              </form>
+            )}
           </section>
 
           {/* PROPOSTA */}

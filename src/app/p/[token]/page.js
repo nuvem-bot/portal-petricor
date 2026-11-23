@@ -9,7 +9,7 @@ function nextStep(p, base) {
     case 'briefing':
       return p.briefingAt
         ? { who: 'estudio', h: 'Briefing recebido!', t: `${name} está lendo suas respostas e montando o moodboard.` }
-        : { who: 'cliente', h: 'Comece contando sobre a sua marca.', t: 'São 8 perguntas rápidas. Você pode salvar e voltar depois.', cta: 'Responder briefing', href: `${base}/briefing` };
+        : { who: 'cliente', h: 'Comece contando sobre a sua marca.', t: 'São perguntas rápidas sobre a sua marca. Você pode salvar e voltar depois.', cta: 'Responder briefing', href: `${base}/briefing` };
     case 'moodboard':
       return p.moodSentAt
         ? { who: 'estudio', h: 'Feedback recebido!', t: `${name} vai usar seus comentários para começar a criação.` }

@@ -187,3 +187,6 @@ details.inline summary{cursor:pointer;list-style:none}
 details.inline summary::-webkit-details-marker{display:none}
 details.inline[open]{flex-basis:100%}
 @media (max-width:600px){.access-types li{grid-template-columns:1fr;gap:2px}}
+details.upload-existing > summary,.thumb details > summary{list-style:none;cursor:pointer}
+details.upload-existing > summary::-webkit-details-marker,.thumb details > summary::-webkit-details-marker{display:none}
+.thumb textarea.input{font-size:12px;padding:6px 8px;min-height:44px;resize:vertical}

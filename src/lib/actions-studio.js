@@ -6,6 +6,7 @@ import { db } from './db';
 import { requireDesigner, startSession, endSession, newToken } from './auth';
 import { saveUpload, removeUpload } from './files';
 import { STAGES } from './stages';
+import { answersFromForm } from './briefing';
 import { isHex, safeFont, EMPTY_PRESENTATION, COVERS, draftSnapshot } from './presentation';
 
 const str = (fd, k, max = 4000) => String(fd.get(k) ?? '').trim().slice(0, max);
@@ -99,6 +100,45 @@ export async function addMoodItems(fd) {
     n++;
   }
   if (n) await log(p.id, `${me.name} adicionou ${n} ${n === 1 ? 'imagem' : 'imagens'} ao moodboard`);
+  back(p.id);
+}
+
+// A designer sobe um briefing que o cliente já respondeu fora do portal (ex.: no Respondi)
+export async function studioSaveBriefing(_, fd) {
+  const { me, p } = await own(str(fd, 'id', 40));
+  const { answers, tooMany } = answersFromForm(fd);
+  if (tooMany) return { error: `Escolha no máximo ${tooMany.max} em “${tooMany.label}”.` };
+  let files = 0;
+  try {
+    const last = await db.asset.count({ where: { projectId: p.id, kind: 'briefing' } });
+    for (const f of fd.getAll('arquivos')) {
+      const saved = await saveUpload(p.id, f);
+      if (!saved) continue;
+      await db.asset.create({ data: { projectId: p.id, kind: 'briefing', file: saved.rel, size: saved.size, position: last + files, label: f.name } });
+      files++;
+    }
+  } catch (e) { return { error: e.message }; }
+  await db.project.update({ where: { id: p.id }, data: { briefing: JSON.stringify(answers), briefingAt: p.briefingAt || new Date() } });
+  await log(p.id, `${me.name} subiu o briefing do cliente${files ? ` (com ${files} ${files === 1 ? 'arquivo' : 'arquivos'})` : ''}`);
+  back(p.id);
+  return { ok: 'Briefing salvo. O cliente vê essas respostas como já enviadas.' };
+}
+
+// A designer registra o que o cliente já comentou numa imagem (ex.: no Notion)
+export async function studioMoodNote(fd) {
+  const item = await db.moodItem.findUnique({ where: { id: str(fd, 'itemId', 40) } });
+  if (!item) return;
+  await own(item.projectId);
+  await db.moodItem.update({ where: { id: item.id }, data: { liked: str(fd, 'liked', 600) || null, disliked: str(fd, 'disliked', 600) || null } });
+  back(item.projectId);
+}
+
+// Marca o feedback do moodboard como recebido (quando ele foi dado fora do portal)
+export async function studioMoodReceived(fd) {
+  const { me, p } = await own(str(fd, 'id', 40));
+  if (p.moodSentAt) return;
+  await db.project.update({ where: { id: p.id }, data: { moodSentAt: new Date() } });
+  await log(p.id, `${me.name} marcou o feedback do moodboard como recebido`);
   back(p.id);
 }
 

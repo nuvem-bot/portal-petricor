@@ -41,3 +41,17 @@ export const QUESTIONS = [
 export function parseBriefing(raw) {
   try { return raw ? JSON.parse(raw) : {}; } catch { return {}; }
 }
+
+// Lê as respostas de um formulário do briefing (usado pelo cliente e pela designer)
+export function answersFromForm(fd) {
+  const str = (k, max) => String(fd.get(k) ?? '').trim().slice(0, max);
+  const answers = {};
+  for (const q of QUESTIONS) {
+    if (q.type === 'chips') answers[q.id] = fd.getAll(q.id).map(String).filter((v) => q.options.includes(v)).slice(0, q.max);
+    else if (q.type === 'radio') answers[q.id] = q.options.includes(str(q.id, 200)) ? str(q.id, 200) : '';
+    else answers[q.id] = str(q.id, 3000);
+  }
+  const missing = QUESTIONS.filter((q) => q.required && !(Array.isArray(answers[q.id]) ? answers[q.id].length : answers[q.id]));
+  const tooMany = QUESTIONS.find((q) => q.type === 'chips' && fd.getAll(q.id).length > q.max);
+  return { answers, missing, tooMany };
+}

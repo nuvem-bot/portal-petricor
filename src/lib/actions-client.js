@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { db } from './db';
 import { projectByToken } from './auth';
-import { QUESTIONS } from './briefing';
+import { answersFromForm } from './briefing';
 
 const str = (fd, k, max = 4000) => String(fd.get(k) ?? '').trim().slice(0, max);
 const log = (projectId, text) => db.event.create({ data: { projectId, actor: 'cliente', text } });
@@ -15,15 +15,8 @@ async function project(fd) {
 
 export async function saveBriefing(_, fd) {
   const p = await project(fd);
-  const answers = {};
-  for (const q of QUESTIONS) {
-    if (q.type === 'chips') answers[q.id] = fd.getAll(q.id).map(String).filter((v) => q.options.includes(v)).slice(0, q.max);
-    else if (q.type === 'radio') answers[q.id] = q.options.includes(str(fd, q.id, 200)) ? str(fd, q.id, 200) : '';
-    else answers[q.id] = str(fd, q.id, 3000);
-  }
-  const missing = QUESTIONS.filter((q) => q.required && !(Array.isArray(answers[q.id]) ? answers[q.id].length : answers[q.id]));
-  const tooMany = QUESTIONS.filter((q) => q.type === 'chips' && fd.getAll(q.id).length > q.max);
-  if (tooMany.length) return { error: `Escolha no máximo ${tooMany[0].max} em “${tooMany[0].label}”.` };
+  const { answers, missing, tooMany } = answersFromForm(fd);
+  if (tooMany) return { error: `Escolha no máximo ${tooMany.max} em “${tooMany.label}”.` };
   const final = fd.get('enviar') === '1';
   if (final && missing.length) return { error: `Falta responder: ${missing.map((q) => q.label).join(', ')}.` };
   const first = final && !p.briefingAt;
