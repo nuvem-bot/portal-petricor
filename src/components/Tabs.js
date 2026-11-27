@@ -1,5 +1,6 @@
 'use client';
 import { Children, useEffect, useState } from 'react';
+import Icon from './Icon';
 
 // Abas simples. Os painéis escondidos continuam no formulário (os campos são enviados juntos).
 export default function Tabs({ tabs, storageKey, children }) {
@@ -14,7 +15,7 @@ export default function Tabs({ tabs, storageKey, children }) {
       <div className="tabbar" role="tablist">
         {tabs.map((t) => (
           <button key={t.id} type="button" role="tab" aria-selected={cur === t.id} className={cur === t.id ? 'on' : ''} onClick={() => pick(t.id)}>
-            {t.label}{t.done ? <span className="tdot" aria-label="preenchido" /> : null}
+            {t.icon ? <Icon name={t.icon} size={16} /> : null}{t.label}{t.done ? <span className="tdot" aria-label="preenchido" /> : null}
           </button>
         ))}
       </div>

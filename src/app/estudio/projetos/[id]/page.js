@@ -19,6 +19,8 @@ import StateForm from '@/components/StateForm';
 import BriefingFields from '@/components/BriefingFields';
 import AssetName from '@/components/AssetName';
 import StageView from '@/components/StageView';
+import FilePick from '@/components/FilePick';
+import Icon from '@/components/Icon';
 import { cleanName } from '@/lib/names';
 
 // Qual bloco do painel cada etapa mostra (Criação usa o da proposta; Finalização, o da entrega).
@@ -62,9 +64,8 @@ export default async function ProjectPage({ params }) {
         </span>
       </div>
 
-      <div className="grid2">
-        <div className="stack">
-          <StageView projectId={p.id} current={STAGES[cur].id} groups={['briefing', 'moodboard', 'proposta', 'entrega']}
+      <div className="stack">
+          <StageView projectId={p.id} current={STAGES[cur].id} groups={['briefing', 'moodboard', 'proposta', 'entrega', 'config']}
             stages={STAGES.map((s) => ({ id: s.id, name: s.name, group: STAGE_GROUP[s.id] }))}>
           {/* BRIEFING */}
           <section className="panel" id="briefing">
@@ -87,7 +88,7 @@ export default async function ProjectPage({ params }) {
               <p className="muted small" style={{ margin: '10px 0' }}>Para clientes que responderam fora do portal (por exemplo, no Respondi). Anexe o PDF e, se quiser, copie as respostas para os campos. Ao salvar, o briefing conta como recebido.</p>
               <StateForm action={studioSaveBriefing}>
                 <input type="hidden" name="id" value={p.id} />
-                <div className="field"><label htmlFor="sb-arquivos">PDF ou imagens do briefing</label><input id="sb-arquivos" type="file" name="arquivos" accept="application/pdf,image/*" multiple /></div>
+                <div className="field"><label htmlFor="sb-arquivos">PDF ou imagens do briefing</label><FilePick id="sb-arquivos" name="arquivos" accept="application/pdf,image/*" multiple label="Escolher PDF ou imagens" /></div>
                 <BriefingFields answers={{ nome: p.clientName, email: p.clientEmail || '', marca: p.brandName, ...brief }} prefix="sb" />
                 <div><Submit>Salvar briefing</Submit></div>
               </StateForm>
@@ -102,8 +103,7 @@ export default async function ProjectPage({ params }) {
             </div>
             <form action={addMoodItems} className="row" style={{ marginBottom: 16 }}>
               <input type="hidden" name="id" value={p.id} />
-              <input type="file" name="imagens" accept="image/*" multiple required aria-label="Imagens do moodboard" />
-              <Submit className="btn sm" pendingText="Enviando…">Adicionar imagens</Submit>
+              <FilePick name="imagens" accept="image/*" multiple required autoSubmit label="Adicionar imagens ao moodboard" />
             </form>
             {p.moodItems.length ? (
               <div className="thumbs">
@@ -130,7 +130,7 @@ export default async function ProjectPage({ params }) {
                           </form>
                         </details>
                       )}
-                      <form action={deleteMoodItem}><input type="hidden" name="itemId" value={m.id} /><button className="linkbtn" type="submit">Remover</button></form>
+                      <form action={deleteMoodItem}><input type="hidden" name="itemId" value={m.id} /><button className="iconbtn danger sm" type="submit" aria-label="Remover" title="Remover"><Icon name="trash" size={16} /></button></form>
                     </div>
                   </div>
                 ))}
@@ -174,14 +174,14 @@ export default async function ProjectPage({ params }) {
             <p className="muted small" style={{ marginBottom: 16 }}>Preencha por partes. “Salvar rascunho” guarda tudo sem o cliente ver. “Liberar para o cliente” envia esta versão e move o projeto para Proposta.</p>
 
             <Tabs storageKey={`pres-tab-${p.id}`} tabs={[
-              { id: 'capa', label: 'Capa', done: !!pres.title },
-              { id: 'conceito', label: 'Conceito', done: !!(pres.concept || pres.conceptText) },
-              { id: 'construcao', label: 'Construção', done: pres.build.length > 0 },
-              { id: 'logo', label: 'Logo', done: logos.length > 0 || !!pres.gridImg },
-              { id: 'cores', label: 'Cores', done: pres.palette.some((c) => c.name) },
-              { id: 'tipografia', label: 'Tipografia', done: pres.fonts.some((f) => f.note || f.sample) },
-              { id: 'aplicacoes', label: 'Aplicações', done: mockups.length > 0 },
-              { id: 'final', label: 'Final', done: false },
+              { id: 'capa', icon: 'image', label: 'Capa', done: !!pres.title },
+              { id: 'conceito', icon: 'bulb', label: 'Conceito', done: !!(pres.concept || pres.conceptText) },
+              { id: 'construcao', icon: 'steps', label: 'Construção', done: pres.build.length > 0 },
+              { id: 'logo', icon: 'pen', label: 'Logo', done: logos.length > 0 || !!pres.gridImg },
+              { id: 'cores', icon: 'palette', label: 'Cores', done: pres.palette.some((c) => c.name) },
+              { id: 'tipografia', icon: 'type', label: 'Tipografia', done: pres.fonts.some((f) => f.note || f.sample) },
+              { id: 'aplicacoes', icon: 'grid', label: 'Aplicações', done: mockups.length > 0 },
+              { id: 'final', icon: 'flag', label: 'Final', done: false },
             ]}>
               {/* CAPA */}
               <div className="form">
@@ -320,60 +320,62 @@ export default async function ProjectPage({ params }) {
             <form action={addAssets} className="fgrid" style={{ marginTop: 12, alignItems: 'end' }}>
               <input type="hidden" name="id" value={p.id} /><input type="hidden" name="kind" value="entrega" />
               <div className="field"><label htmlFor="en-label">Nome para o cliente <span className="hint">ex.: Manual da marca</span></label><input id="en-label" name="label" /></div>
-              <div className="field"><label htmlFor="en-file">Arquivo(s)</label><input id="en-file" type="file" name="arquivos" multiple required /></div>
+              <div className="field"><label htmlFor="en-file">Arquivo(s)</label><FilePick id="en-file" name="arquivos" multiple required label="Escolher arquivos" /></div>
               <div><Submit className="btn sm" pendingText="Enviando…">Adicionar à entrega</Submit></div>
             </form>
           </section>
+          <div className="config-grid">
+            <div className="stack">
+              <section className="panel">
+                <span className="label">Link do cliente</span>
+                {!p.clientAccess && <p className="msg-err">O acesso do cliente está pausado. {me.role === 'adm' ? <Link href="/estudio/configuracoes">Liberar em Configurações</Link> : 'Fale com a adm para liberar.'}</p>}
+                <CopyLink url={link} />
+                <p className="muted small" style={{ marginTop: 10 }}>Quem tiver este link vê o projeto. Envie só para o cliente.</p>
+                <form action={regenerateLink} style={{ marginTop: 8 }}><input type="hidden" name="id" value={p.id} /><button className="linkbtn" type="submit">Gerar novo link (o anterior para de funcionar)</button></form>
+              </section>
+
+              <section className="panel">
+                <span className="label">Dados do projeto</span>
+                <form action={updateProject} className="form">
+                  <input type="hidden" name="id" value={p.id} />
+                  <div className="field"><label htmlFor="ed-brand">Marca</label><input id="ed-brand" name="brandName" defaultValue={p.brandName} /></div>
+                  <div className="field"><label htmlFor="ed-client">Cliente</label><input id="ed-client" name="clientName" defaultValue={p.clientName} /></div>
+                  <div className="field"><label htmlFor="ed-email">E-mail</label><input id="ed-email" name="clientEmail" type="email" defaultValue={p.clientEmail || ''} /></div>
+                  <div className="fgrid">
+                    <div className="field"><label htmlFor="ed-due">Entrega</label><input id="ed-due" name="dueDate" type="date" defaultValue={p.dueDate ? new Date(p.dueDate).toISOString().slice(0, 10) : ''} /></div>
+                    <div className="field"><label htmlFor="ed-rounds">Rodadas de ajuste</label><input id="ed-rounds" name="roundsIncluded" type="number" min="0" max="10" defaultValue={p.roundsIncluded} /></div>
+                  </div>
+                  <p className="muted small">Rodadas usadas: {p.roundsUsed}</p>
+                  <div><Submit className="btn sm">Salvar dados</Submit></div>
+                </form>
+                {me.role === 'adm' && <details className="danger" style={{ marginTop: 20 }}>
+                  <summary>Excluir projeto</summary>
+                  <form action={deleteProject} className="form" style={{ marginTop: 10 }}>
+                    <input type="hidden" name="id" value={p.id} />
+                    <div className="field"><label htmlFor="del">Digite “{p.brandName}” para confirmar. Isso apaga o projeto e todos os arquivos.</label><input id="del" name="confirm" autoComplete="off" /></div>
+                    <div><button className="btn sm danger" type="submit">Excluir de vez</button></div>
+                  </form>
+                </details>}
+              </section>
+            </div>
+            <div className="stack">
+              <section className="panel">
+                <span className="label">Histórico</span>
+                <form action={postNote} className="row" style={{ marginBottom: 10 }}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <input className="input" name="text" placeholder="Anotação interna" aria-label="Anotação interna" style={{ flex: 1, minWidth: 0 }} />
+                  <Submit className="btn sm">Anotar</Submit>
+                </form>
+                {p.events.length ? (
+                  <ul className="events">{p.events.map((e) => (
+                    <li key={e.id}><span className={`sev ${e.actor}`} /><span>{e.text}</span><span className="when">{fmtDateTime(e.createdAt)}</span></li>
+                  ))}</ul>
+                ) : <p className="empty">Sem atividade ainda.</p>}
+              </section>
+
+            </div>
+          </div>
           </StageView>
-        </div>
-
-        <div className="stack">
-          <section className="panel">
-            <span className="label">Link do cliente</span>
-            {!p.clientAccess && <p className="msg-err">O acesso do cliente está pausado. {me.role === 'adm' ? <Link href="/estudio/configuracoes">Liberar em Configurações</Link> : 'Fale com a adm para liberar.'}</p>}
-            <CopyLink url={link} />
-            <p className="muted small" style={{ marginTop: 10 }}>Quem tiver este link vê o projeto. Envie só para o cliente.</p>
-            <form action={regenerateLink} style={{ marginTop: 8 }}><input type="hidden" name="id" value={p.id} /><button className="linkbtn" type="submit">Gerar novo link (o anterior para de funcionar)</button></form>
-          </section>
-
-          <section className="panel">
-            <span className="label">Histórico</span>
-            <form action={postNote} className="row" style={{ marginBottom: 10 }}>
-              <input type="hidden" name="id" value={p.id} />
-              <input className="input" name="text" placeholder="Anotação interna" aria-label="Anotação interna" style={{ flex: 1, minWidth: 0 }} />
-              <Submit className="btn sm">Anotar</Submit>
-            </form>
-            {p.events.length ? (
-              <ul className="events">{p.events.map((e) => (
-                <li key={e.id}><span className={`sev ${e.actor}`} /><span>{e.text}</span><span className="when">{fmtDateTime(e.createdAt)}</span></li>
-              ))}</ul>
-            ) : <p className="empty">Sem atividade ainda.</p>}
-          </section>
-
-          <section className="panel">
-            <span className="label">Dados do projeto</span>
-            <form action={updateProject} className="form">
-              <input type="hidden" name="id" value={p.id} />
-              <div className="field"><label htmlFor="ed-brand">Marca</label><input id="ed-brand" name="brandName" defaultValue={p.brandName} /></div>
-              <div className="field"><label htmlFor="ed-client">Cliente</label><input id="ed-client" name="clientName" defaultValue={p.clientName} /></div>
-              <div className="field"><label htmlFor="ed-email">E-mail</label><input id="ed-email" name="clientEmail" type="email" defaultValue={p.clientEmail || ''} /></div>
-              <div className="fgrid">
-                <div className="field"><label htmlFor="ed-due">Entrega</label><input id="ed-due" name="dueDate" type="date" defaultValue={p.dueDate ? new Date(p.dueDate).toISOString().slice(0, 10) : ''} /></div>
-                <div className="field"><label htmlFor="ed-rounds">Rodadas de ajuste</label><input id="ed-rounds" name="roundsIncluded" type="number" min="0" max="10" defaultValue={p.roundsIncluded} /></div>
-              </div>
-              <p className="muted small">Rodadas usadas: {p.roundsUsed}</p>
-              <div><Submit className="btn sm">Salvar dados</Submit></div>
-            </form>
-            {me.role === 'adm' && <details className="danger" style={{ marginTop: 20 }}>
-              <summary>Excluir projeto</summary>
-              <form action={deleteProject} className="form" style={{ marginTop: 10 }}>
-                <input type="hidden" name="id" value={p.id} />
-                <div className="field"><label htmlFor="del">Digite “{p.brandName}” para confirmar. Isso apaga o projeto e todos os arquivos.</label><input id="del" name="confirm" autoComplete="off" /></div>
-                <div><button className="btn sm danger" type="submit">Excluir de vez</button></div>
-              </form>
-            </details>}
-          </section>
-        </div>
       </div>
     </>
   );
@@ -392,7 +394,7 @@ function AssetList({ items, download }) {
             <div><AssetName id={a.id} label={cleanName(a.label)} /><small className="muted">{ext.toUpperCase()} · {fmtSize(a.size)}</small></div>
             <div className="row" style={{ gap: 12 }}>
               {download && <a className="linkbtn" href={fileUrl(a.file, null, { download: true, name: cleanName(a.label) })}>Baixar</a>}
-              <form action={deleteAsset}><input type="hidden" name="assetId" value={a.id} /><button className="linkbtn" type="submit">Remover</button></form>
+              <form action={deleteAsset}><input type="hidden" name="assetId" value={a.id} /><button className="iconbtn danger sm" type="submit" aria-label="Remover" title="Remover"><Icon name="trash" size={16} /></button></form>
             </div>
           </li>
         );
@@ -405,8 +407,14 @@ function ImageInput({ name, current, label }) {
   return (
     <div className="row small" style={{ gap: 10 }}>
       <input type="hidden" form="pres-form" name={`${name}old`} value={current || ''} />
-      <input type="file" form="pres-form" name={name} accept="image/*" aria-label={label} style={{ maxWidth: '100%' }} />
-      {current && <label className="row" style={{ gap: 4 }}><input type="checkbox" form="pres-form" name={`${name}del`} value="1" /> tirar imagem</label>}
+      <FilePick form="pres-form" name={name} accept="image/*" label={current ? 'Trocar imagem' : label} />
+      {current && (
+        <label className="imgdel" title="Tirar imagem">
+          <input type="checkbox" form="pres-form" name={`${name}del`} value="1" aria-label="Tirar imagem" />
+          <span className="iconbtn danger"><Icon name="trash" size={18} /></span>
+          <span className="off">Tirar</span><span className="on">Sai ao salvar</span>
+        </label>
+      )}
     </div>
   );
 }
@@ -415,8 +423,7 @@ function UploadAssets({ id, kind, label, multiple }) {
   return (
     <form action={addAssets} className="row">
       <input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value={kind} />
-      <input type="file" name="arquivos" accept="image/*" multiple={multiple} required aria-label={label} style={{ maxWidth: '100%' }} />
-      <Submit className="btn sm" pendingText="Enviando…">{label}</Submit>
+      <FilePick name="arquivos" accept="image/*" multiple={multiple} required autoSubmit label={label} />
     </form>
   );
 }
