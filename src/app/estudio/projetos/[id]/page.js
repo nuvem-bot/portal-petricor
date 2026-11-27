@@ -181,7 +181,7 @@ export default async function ProjectPage({ params }) {
 
             <Tabs storageKey={`pres-tab-${p.id}`} tabs={[
               { id: 'capa', label: 'Capa', done: !!pres.title },
-              { id: 'conceito', label: 'Conceito', done: !!pres.concept },
+              { id: 'conceito', label: 'Conceito', done: !!(pres.concept || pres.conceptText) },
               { id: 'construcao', label: 'Construção', done: pres.build.length > 0 },
               { id: 'logo', label: 'Logo', done: logos.length > 0 || !!pres.gridImg },
               { id: 'cores', label: 'Cores', done: pres.palette.some((c) => c.name) },
@@ -209,7 +209,8 @@ export default async function ProjectPage({ params }) {
 
               {/* CONCEITO */}
               <div className="form">
-                <div className="field"><label htmlFor="pr-concept">Conceito</label><textarea id="pr-concept" form="pres-form" name="concept" defaultValue={pres.concept} placeholder="O texto grande do slide de conceito. Uma ou duas frases." /></div>
+                <div className="field"><label htmlFor="pr-concept">Conceito</label><textarea id="pr-concept" form="pres-form" name="concept" rows={3} defaultValue={pres.concept} placeholder="A frase de efeito, em letra grande." /></div>
+                <div className="field"><label htmlFor="pr-ctext">Descrição do conceito</label><textarea id="pr-ctext" form="pres-form" name="conceptText" rows={10} defaultValue={pres.conceptText} placeholder="O texto maior que explica o conceito. Pode ter vários parágrafos: deixe uma linha em branco entre eles." /></div>
               </div>
 
               {/* CONSTRUÇÃO */}

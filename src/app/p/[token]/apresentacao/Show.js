@@ -21,7 +21,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
   const build = (pres.build || []).filter((b) => b.t || b.d || b.src);
   const cover = pres.cover === 'grafismo' && !pattern ? 'liso' : pres.cover || 'liso';
   const versions = (pres.logoVersions || []).filter((v) => v.src);
-  const slides = ['capa', pres.concept && 'conceito', build.length && 'construcao', 'marca', versions.length && 'versoes', 'paleta', 'tipografia', mockups.length && 'aplicacoes', 'fim'].filter(Boolean);
+  const slides = ['capa', (pres.concept || pres.conceptText) && 'conceito', build.length && 'construcao', 'marca', versions.length && 'versoes', 'paleta', 'tipografia', mockups.length && 'aplicacoes', 'fim'].filter(Boolean);
 
   useEffect(() => {
     document.documentElement.style.overflow = 'hidden';
@@ -90,11 +90,14 @@ export default function Show({ base, brand, client, date, pres, display, body, l
         {cover === 'ondas' && <canvas ref={canvas} className="waves" aria-hidden="true" />}
       </section>
 
-      {pres.concept && (
+      {(pres.concept || pres.conceptText) && (
         <section className="slide" data-s="conceito">
           <div className="sin">
             <div className="slab">Conceito</div>
-            <p className="big" style={D}>{pres.concept}</p>
+            {pres.concept && <p className={'big' + (pres.concept.length > 90 ? ' long' : '')} style={D}>{pres.concept}</p>}
+            {pres.conceptText && (
+              <div className="concept-text">{pres.conceptText.split(/\n\s*\n/).map((par, i) => <p key={i}>{par}</p>)}</div>
+            )}
             {pillars.length > 0 && (
               <div className="cols">{pillars.map((pl, i) => <p key={i}><b style={D}>{pl.t}</b>{pl.d}</p>)}</div>
             )}

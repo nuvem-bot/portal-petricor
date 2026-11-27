@@ -215,6 +215,7 @@ async function presentationFromForm(fd, projectId) {
     ...EMPTY_PRESENTATION,
     title: str(fd, 'title', 200),
     concept: str(fd, 'concept', 1000),
+    conceptText: str(fd, 'conceptText', 4000),
     buildTitle: str(fd, 'buildTitle', 60) || EMPTY_PRESENTATION.buildTitle,
     build: await buildFromForm(fd, projectId),
     gridImg: await imageField(fd, 'grid', projectId),

@@ -2,6 +2,7 @@
 export const EMPTY_PRESENTATION = {
   title: '',
   concept: '',
+  conceptText: '',
   // Antigo (versões liberadas antes da "construção da marca")
   pillars: [],
   // Construção da marca: etapas com imagem, título e texto (ex.: o eixo, as letras, a estrela…)
@@ -25,7 +26,7 @@ export const EMPTY_PRESENTATION = {
   gridImg: null,
   logoVersions: [],
   typeNote: '',
-  closing: 'Essa é a sua marca. Ela é sua?',
+  closing: 'Essa é a sua marca. Agora ela é sua?',
   // Fundo da capa: liso | grafismo (imagem da marca) | ondas | grade | grao
   cover: 'liso',
 };
@@ -84,6 +85,8 @@ export const WEIGHTS = ['300', '400', '500', '700'];
 
 // Apresentações antigas não tinham a lista de fontes: monta a partir de displayFont/bodyFont
 function normalize(p) {
+  if (p.closing === 'Essa é a sua marca. Ela é sua?') p.closing = EMPTY_PRESENTATION.closing;
+  if (typeof p.conceptText !== 'string') p.conceptText = '';
   if (!p.fonts?.length || p.fonts === EMPTY_PRESENTATION.fonts) {
     p.fonts = [
       { role: 'Títulos', family: p.displayFont || 'Fraunces', weight: '400', note: '', sample: '' },
