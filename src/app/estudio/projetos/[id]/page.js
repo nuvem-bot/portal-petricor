@@ -9,7 +9,7 @@ import Tabs from '@/components/Tabs';
 import PaletteEditor from '@/components/PaletteEditor';
 import { fileUrl, fmtDate, fmtDateTime, fmtSize } from '@/lib/url';
 import {
-  setStage, regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation, publishPresentation,
+  regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation, publishPresentation,
   addAssets, deleteAsset, postNote, updateProject, deleteProject,
   studioSaveBriefing, studioMoodNote, studioMoodReceived,
 } from '@/lib/actions-studio';
@@ -18,7 +18,11 @@ import CopyLink from '@/components/CopyLink';
 import StateForm from '@/components/StateForm';
 import BriefingFields from '@/components/BriefingFields';
 import AssetName from '@/components/AssetName';
+import StageView from '@/components/StageView';
 import { cleanName } from '@/lib/names';
+
+// Qual bloco do painel cada etapa mostra (Criação usa o da proposta; Finalização, o da entrega).
+const STAGE_GROUP = { briefing: 'briefing', moodboard: 'moodboard', criacao: 'proposta', proposta: 'proposta', finalizacao: 'entrega', entrega: 'entrega' };
 
 export default async function ProjectPage({ params }) {
   const p = await db.project.findUnique({
@@ -60,20 +64,8 @@ export default async function ProjectPage({ params }) {
 
       <div className="grid2">
         <div className="stack">
-          {/* ETAPA */}
-          <section className="panel">
-            <span className="label">Etapa do projeto</span>
-            <p className="muted small" style={{ marginBottom: 12 }}>O cliente vê a etapa atual no portal. A apresentação só aparece para ele depois de “Liberar para o cliente”.</p>
-            <div className="row">
-              {STAGES.map((s, i) => (
-                <form key={s.id} action={setStage}>
-                  <input type="hidden" name="id" value={p.id} /><input type="hidden" name="stage" value={s.id} />
-                  <button type="submit" className={`btn sm ${i === cur ? 'primary' : 'ghost'}`} aria-pressed={i === cur}>{i < cur ? '✓ ' : ''}{s.name}</button>
-                </form>
-              ))}
-            </div>
-          </section>
-
+          <StageView projectId={p.id} current={STAGES[cur].id} groups={['briefing', 'moodboard', 'proposta', 'entrega']}
+            stages={STAGES.map((s) => ({ id: s.id, name: s.name, group: STAGE_GROUP[s.id] }))}>
           {/* BRIEFING */}
           <section className="panel" id="briefing">
             <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
@@ -332,6 +324,7 @@ export default async function ProjectPage({ params }) {
               <div><Submit className="btn sm" pendingText="Enviando…">Adicionar à entrega</Submit></div>
             </form>
           </section>
+          </StageView>
         </div>
 
         <div className="stack">
