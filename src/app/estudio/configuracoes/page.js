@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { stageName } from '@/lib/stages';
-import { addPerson, setRole, setActive, resetPassword, setClientAccess, newClientLink } from '@/lib/actions-settings';
+import { addPerson, setRole, setActive, resetPassword, setClientAccess, newClientLink, sendTestMail } from '@/lib/actions-settings';
+import { mailReady } from '@/lib/mail';
 import StateForm from '@/components/StateForm';
 import Submit from '@/components/Submit';
 import CopyLink from '@/components/CopyLink';
@@ -33,6 +34,16 @@ export default async function Configuracoes() {
           <li><b>Equipe</b><span className="muted small">Entra no painel e trabalha em todos os projetos. Não vê esta tela e não exclui projetos.</span></li>
           <li><b>Cliente</b><span className="muted small">Não tem senha. Entra pelo link do próprio projeto e só vê o projeto dele. Você pode pausar o link quando quiser.</span></li>
         </ul>
+      </section>
+
+      <section className="panel">
+        <h2>Avisos por e-mail</h2>
+        {mailReady() ? (
+          <p className="muted small" style={{ margin: '8px 0 12px' }}><span className="cur-dot" /> Ligados. O portal avisa o cliente quando a etapa muda, quando a apresentação fica pronta e quando recebe o link. A designer do projeto é avisada quando o cliente envia o briefing, comenta o moodboard, aprova ou pede ajustes. Quem entra na equipe recebe um e-mail de boas-vindas.</p>
+        ) : (
+          <p className="msg-err" style={{ margin: '8px 0 12px' }}>Ainda não configurados no servidor. Enquanto isso, nenhum e-mail sai.</p>
+        )}
+        <StateForm action={sendTestMail} className="row"><Submit className="btn sm ghost">Mandar um e-mail de teste para mim</Submit></StateForm>
       </section>
 
       <section className="panel">

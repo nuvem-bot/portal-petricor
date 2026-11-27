@@ -10,7 +10,7 @@ import PaletteEditor from '@/components/PaletteEditor';
 import { fileUrl, fmtDate, fmtDateTime, fmtSize } from '@/lib/url';
 import {
   regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation, publishPresentation,
-  addAssets, deleteAsset, postNote, updateProject, deleteProject,
+  addAssets, deleteAsset, postNote, updateProject, deleteProject, sendClientLink,
   studioSaveBriefing, studioMoodNote, studioMoodReceived,
 } from '@/lib/actions-studio';
 import Submit from '@/components/Submit';
@@ -331,6 +331,10 @@ export default async function ProjectPage({ params }) {
                 {!p.clientAccess && <p className="msg-err">O acesso do cliente está pausado. {me.role === 'adm' ? <Link href="/estudio/configuracoes">Liberar em Configurações</Link> : 'Fale com a adm para liberar.'}</p>}
                 <CopyLink url={link} />
                 <p className="muted small" style={{ marginTop: 10 }}>Quem tiver este link vê o projeto. Envie só para o cliente.</p>
+                <StateForm action={sendClientLink} className="row" style={{ marginTop: 10 }}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <Submit className="btn sm" pendingText="Enviando…">{p.clientEmail ? `Enviar link por e-mail para ${p.clientEmail}` : 'Enviar link por e-mail'}</Submit>
+                </StateForm>
                 <form action={regenerateLink} style={{ marginTop: 8 }}><input type="hidden" name="id" value={p.id} /><button className="linkbtn" type="submit">Gerar novo link (o anterior para de funcionar)</button></form>
               </section>
 
@@ -346,6 +350,7 @@ export default async function ProjectPage({ params }) {
                     <div className="field"><label htmlFor="ed-rounds">Rodadas de ajuste</label><input id="ed-rounds" name="roundsIncluded" type="number" min="0" max="10" defaultValue={p.roundsIncluded} /></div>
                   </div>
                   <p className="muted small">Rodadas usadas: {p.roundsUsed}</p>
+                  <label className="row small" style={{ gap: 8 }}><input type="checkbox" name="notifyClient" value="1" defaultChecked={p.notifyClient} /> Avisar o cliente por e-mail quando a etapa mudar</label>
                   <div><Submit className="btn sm">Salvar dados</Submit></div>
                 </form>
                 {me.role === 'adm' && <details className="danger" style={{ marginTop: 20 }}>

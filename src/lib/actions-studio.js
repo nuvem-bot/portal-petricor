@@ -6,6 +6,7 @@ import { db } from './db';
 import { requireDesigner, startSession, endSession, newToken } from './auth';
 import { saveUpload, removeUpload } from './files';
 import { labelFromFile, cleanName } from './names';
+import { mailClientStage, mailClientAccess, mailClientProposal } from './mail';
 import { STAGES } from './stages';
 import { answersFromForm } from './briefing';
 import { isHex, safeFont, EMPTY_PRESENTATION, COVERS, draftSnapshot, BUILD_SLOTS, MAX_COLORS, MAX_FONTS, LOGO_VERSIONS, WEIGHTS } from './presentation';
@@ -63,6 +64,7 @@ export async function setStage(fd) {
   const data = { stage };
   await db.project.update({ where: { id: p.id }, data });
   await log(p.id, `${me.name} moveu o projeto para ${STAGES.find((s) => s.id === stage).name}`);
+  if (stage !== p.stage && stage !== 'proposta') await mailClientStage({ ...p, stage }, stage);
   back(p.id);
 }
 
@@ -77,6 +79,7 @@ export async function updateProject(fd) {
       clientEmail: str(fd, 'clientEmail', 200) || null,
       dueDate: due ? new Date(`${due}T12:00:00`) : null,
       roundsIncluded: Math.max(0, Math.min(10, Number(fd.get('roundsIncluded')) || 0)),
+      notifyClient: fd.get('notifyClient') === '1',
     },
   });
   back(p.id);
@@ -84,9 +87,19 @@ export async function updateProject(fd) {
 
 export async function regenerateLink(fd) {
   const { me, p } = await own(str(fd, 'id', 40));
-  await db.project.update({ where: { id: p.id }, data: { token: newToken() } });
+  const np = await db.project.update({ where: { id: p.id }, data: { token: newToken() } });
   await log(p.id, `${me.name} gerou um novo link para o cliente`);
+  if (np.clientAccess && np.notifyClient) await mailClientAccess(np, { reason: 'novo-link' });
   back(p.id);
+}
+
+export async function sendClientLink(_, fd) {
+  const { p } = await own(str(fd, 'id', 40));
+  if (!p.clientEmail) return { error: 'Cadastre o e-mail do cliente em Dados do projeto.' };
+  if (!p.clientAccess) return { error: 'O acesso do cliente está pausado.' };
+  const ok = await mailClientAccess(p);
+  back(p.id);
+  return ok ? { ok: `Link enviado para ${p.clientEmail}.` } : { error: 'Não foi possível enviar. Confira a configuração de e-mail.' };
 }
 
 export async function addMoodItems(fd) {
@@ -259,6 +272,7 @@ export async function publishPresentation(fd) {
     },
   });
   await log(p.id, `${me.name} liberou a versão ${number} da proposta para o cliente`);
+  await mailClientProposal(p, number);
   back(p.id);
 }
 

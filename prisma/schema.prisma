@@ -33,6 +33,8 @@ model Project {
   token       String    @unique
   // O cliente consegue abrir o link? A adm pode pausar o acesso.
   clientAccess Boolean  @default(true)
+  // Mandar avisos por e-mail para o cliente (mudança de etapa, apresentação pronta)
+  notifyClient Boolean  @default(true)
   // briefing | moodboard | criacao | proposta | finalizacao | entrega | concluido
   stage       String    @default("briefing")
   dueDate     DateTime?

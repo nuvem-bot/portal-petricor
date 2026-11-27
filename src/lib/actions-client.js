@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from './db';
 import { projectByToken } from './auth';
 import { answersFromForm } from './briefing';
+import { mailTeam, mailClientDecision } from './mail';
 
 const str = (fd, k, max = 4000) => String(fd.get(k) ?? '').trim().slice(0, max);
 const log = (projectId, text) => db.event.create({ data: { projectId, actor: 'cliente', text } });
@@ -21,7 +22,10 @@ export async function saveBriefing(_, fd) {
   if (final && missing.length) return { error: `Falta responder: ${missing.map((q) => q.label).join(', ')}.` };
   const first = final && !p.briefingAt;
   await db.project.update({ where: { id: p.id }, data: { briefing: JSON.stringify(answers), ...(final ? { briefingAt: new Date() } : {}) } });
-  if (first) await log(p.id, `${p.clientName} enviou o briefing`);
+  if (first) {
+    await log(p.id, `${p.clientName} enviou o briefing`);
+    await mailTeam(p, { subject: `${p.brandName}: briefing recebido`, title: 'O cliente respondeu o briefing', paragraphs: [`${p.clientName} enviou o briefing de ${p.brandName}. As respostas já estão no projeto.`] });
+  }
   revalidatePath(`/p/${p.token}`, 'layout');
   return { ok: final ? 'Briefing enviado. A designer já foi avisada.' : 'Rascunho salvo.' };
 }
@@ -48,6 +52,7 @@ export async function sendMood(fd) {
   }
   await db.project.update({ where: { id: p.id }, data: { moodSentAt: new Date() } });
   await log(p.id, `${p.clientName} enviou o feedback do moodboard (${items.length} imagens comentadas)`);
+  await mailTeam(p, { subject: `${p.brandName}: feedback do moodboard`, title: 'O cliente comentou o moodboard', paragraphs: [`${p.clientName} escreveu o que gostou e o que não gostou nas ${items.length} referências de ${p.brandName}.`] });
   revalidatePath(`/p/${p.token}`, 'layout');
   return { ok: true };
 }
@@ -72,6 +77,10 @@ export async function decide(_, fd) {
     },
   });
   await log(p.id, d === 'aprovado' ? `${p.clientName} aprovou a versão ${v?.number || 1}` : `${p.clientName} pediu ajustes na versão ${v?.number || 1}: “${note}”`);
+  await mailTeam(p, d === 'aprovado'
+    ? { subject: `${p.brandName}: identidade aprovada!`, title: 'O cliente aprovou a identidade', paragraphs: [`${p.clientName} aprovou a versão ${v?.number || 1} de ${p.brandName}. O projeto foi para Finalização.`], quote: note || undefined }
+    : { subject: `${p.brandName}: pedido de ajustes na versão ${v?.number || 1}`, title: 'O cliente pediu ajustes', paragraphs: [`${p.clientName} pediu ajustes na versão ${v?.number || 1} de ${p.brandName}:`], quote: note });
+  await mailClientDecision(p, d);
   revalidatePath(`/p/${p.token}`, 'layout');
   return { ok: d };
 }

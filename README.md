@@ -92,3 +92,18 @@ bash /var/www/portal-petricor/deploy/instalar.sh
 - O link do cliente é uma chave aleatória de 24 caracteres. Quem tiver o link vê o projeto, então envie só para o cliente. No painel dá para gerar um novo link, e o antigo para de funcionar.
 - Os arquivos só abrem para a designer logada ou com o link do projeto. Os arquivos de entrega só ficam disponíveis para o cliente na etapa Entrega.
 - Login da designer com senha (bcrypt) e cookie assinado de 30 dias.
+
+## Avisos por e-mail
+
+O portal manda e-mail quando:
+- **para o cliente:** recebe o link (botão "Enviar link por e-mail" na engrenagem do projeto, link novo ou acesso liberado de novo), a etapa muda, a apresentação fica pronta, ele pede ajustes;
+- **para a designer do projeto** (ou as adms, se ela não estiver ativa): o cliente envia o briefing, comenta o moodboard, aprova ou pede ajustes;
+- **para quem entra na equipe:** boas-vindas com o endereço do portal (sem a senha).
+
+Dá para desligar os avisos de um cliente em Dados do projeto.
+
+Para ligar no VPS (Google Workspace), crie uma senha de app do Google para o e-mail que vai enviar e rode:
+
+    bash /var/www/portal-petricor/deploy/configurar-email.sh
+
+Depois, em Configurações, use "Mandar um e-mail de teste para mim".
