@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { db } from './db';
 import { requireDesigner, startSession, endSession, newToken } from './auth';
 import { saveUpload, removeUpload } from './files';
+import { labelFromFile, cleanName } from './names';
 import { STAGES } from './stages';
 import { answersFromForm } from './briefing';
 import { isHex, safeFont, EMPTY_PRESENTATION, COVERS, draftSnapshot, BUILD_SLOTS, MAX_COLORS, MAX_FONTS, LOGO_VERSIONS, WEIGHTS } from './presentation';
@@ -114,7 +115,7 @@ export async function studioSaveBriefing(_, fd) {
     for (const f of fd.getAll('arquivos')) {
       const saved = await saveUpload(p.id, f);
       if (!saved) continue;
-      await db.asset.create({ data: { projectId: p.id, kind: 'briefing', file: saved.rel, size: saved.size, position: last + files, label: f.name } });
+      await db.asset.create({ data: { projectId: p.id, kind: 'briefing', file: saved.rel, size: saved.size, position: last + files, label: labelFromFile(f.name) } });
       files++;
     }
   } catch (e) { return { error: e.message }; }
@@ -273,12 +274,22 @@ export async function addAssets(fd) {
     const saved = await saveUpload(p.id, f);
     if (!saved) continue;
     await db.asset.create({
-      data: { projectId: p.id, kind, file: saved.rel, size: saved.size, position: last + n, label: (files.length === 1 && label) || f.name },
+      data: { projectId: p.id, kind, file: saved.rel, size: saved.size, position: last + n, label: (files.length === 1 && label) || labelFromFile(f.name) },
     });
     n++;
   }
   if (n && kind === 'entrega') await log(p.id, `${me.name} adicionou ${n} ${n === 1 ? 'arquivo' : 'arquivos'} à entrega`);
   back(p.id);
+}
+
+export async function renameAsset(fd) {
+  const a = await db.asset.findUnique({ where: { id: str(fd, 'assetId', 40) } });
+  if (!a) return;
+  await own(a.projectId);
+  const label = cleanName(str(fd, 'label', 120));
+  if (!label || label === a.label) return;
+  await db.asset.update({ where: { id: a.id }, data: { label } });
+  back(a.projectId);
 }
 
 export async function deleteAsset(fd) {

@@ -1,3 +1,4 @@
+import { labelFromFile } from './names';
 // Dados da apresentação que a designer preenche no painel.
 export const EMPTY_PRESENTATION = {
   title: '',
@@ -61,7 +62,7 @@ export function draftSnapshot(p) {
     pres: parsePresentation(p.presentation),
     logo: logo?.file || null,
     pattern: pattern?.file || null,
-    mockups: assets.filter((a) => a.kind === 'mockup').map((a) => ({ file: a.file, label: a.label.replace(/\.[a-z0-9]+$/i, '') })),
+    mockups: assets.filter((a) => a.kind === 'mockup').map((a) => ({ file: a.file, label: labelFromFile(a.label) })),
   };
 }
 

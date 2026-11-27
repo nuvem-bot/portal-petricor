@@ -17,6 +17,8 @@ import Submit from '@/components/Submit';
 import CopyLink from '@/components/CopyLink';
 import StateForm from '@/components/StateForm';
 import BriefingFields from '@/components/BriefingFields';
+import AssetName from '@/components/AssetName';
+import { cleanName } from '@/lib/names';
 
 export default async function ProjectPage({ params }) {
   const p = await db.project.findUnique({
@@ -394,9 +396,9 @@ function AssetList({ items, download }) {
         return (
           <li key={a.id}>
             <span className="ext">{isImg ? <img src={fileUrl(a.file)} alt="" /> : ext}</span>
-            <div><b>{a.label}</b><br /><small className="muted">{ext.toUpperCase()} · {fmtSize(a.size)}</small></div>
+            <div><AssetName id={a.id} label={cleanName(a.label)} /><small className="muted">{ext.toUpperCase()} · {fmtSize(a.size)}</small></div>
             <div className="row" style={{ gap: 12 }}>
-              {download && <a className="linkbtn" href={fileUrl(a.file, null, { download: true, name: a.label })}>Baixar</a>}
+              {download && <a className="linkbtn" href={fileUrl(a.file, null, { download: true, name: cleanName(a.label) })}>Baixar</a>}
               <form action={deleteAsset}><input type="hidden" name="assetId" value={a.id} /><button className="linkbtn" type="submit">Remover</button></form>
             </div>
           </li>

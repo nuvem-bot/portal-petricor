@@ -1,3 +1,4 @@
+import { labelFromFile } from '@/lib/names';
 import Link from 'next/link';
 import { loadClientProject } from '@/lib/client-project';
 import { currentDesigner } from '@/lib/auth';
@@ -42,7 +43,7 @@ export default async function Apresentacao({ params, searchParams }) {
         body={bf}
         logo={url(snap.logo)}
         pattern={url(snap.pattern)}
-        mockups={snap.mockups.map((m) => ({ src: url(m.file), label: m.label }))}
+        mockups={snap.mockups.map((m) => ({ src: url(m.file), label: labelFromFile(m.label) }))}
         canDecide={!draft && version.id === latest.id && p.stage === 'proposta' && !p.decision}
       />
     </>

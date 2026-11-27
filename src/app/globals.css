@@ -196,7 +196,7 @@ details.upload-existing > summary::-webkit-details-marker,.thumb details > summa
 .be-img img{width:100%;height:100%;object-fit:contain}
 
 /* Abas da apresentação */
-.tabbar{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:18px;scrollbar-width:thin}
+.tabbar{display:flex;flex-wrap:wrap;gap:2px 4px;border-bottom:1px solid var(--line);margin-bottom:18px}
 .tabbar button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;margin-bottom:-1px}
 .tabbar button.on{color:var(--ink);border-bottom-color:var(--accent)}
 .tabbar .tdot{width:6px;height:6px;border-radius:50%;background:var(--ok)}
@@ -204,3 +204,8 @@ details.upload-existing > summary::-webkit-details-marker,.thumb details > summa
 .font-edit{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0;display:grid;gap:10px}
 .font-edit legend{font-size:12px;font-weight:600;color:var(--muted);padding:0 6px}
 .pres-actions{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+
+.asset-name{margin:0}
+.asset-name input{font:inherit;font-weight:700;color:inherit;background:transparent;border:1px solid transparent;border-radius:6px;padding:2px 6px;margin-left:-7px;width:100%;max-width:420px;cursor:text}
+.asset-name input:hover{border-color:var(--line)}
+.asset-name input:focus{outline:none;border-color:var(--accent);background:var(--bg, #fff)}
