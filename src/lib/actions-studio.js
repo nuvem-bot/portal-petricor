@@ -7,7 +7,7 @@ import { requireDesigner, startSession, endSession, newToken } from './auth';
 import { saveUpload, removeUpload } from './files';
 import { STAGES } from './stages';
 import { answersFromForm } from './briefing';
-import { isHex, safeFont, EMPTY_PRESENTATION, COVERS, draftSnapshot } from './presentation';
+import { isHex, safeFont, EMPTY_PRESENTATION, COVERS, draftSnapshot, BUILD_SLOTS } from './presentation';
 
 const str = (fd, k, max = 4000) => String(fd.get(k) ?? '').trim().slice(0, max);
 const log = (projectId, text) => db.event.create({ data: { projectId, actor: 'estudio', text } });
@@ -159,12 +159,31 @@ export async function deleteMoodItem(fd) {
   back(item.projectId);
 }
 
-function presentationFromForm(fd) {
+// Etapas da construção da marca: título, texto e imagem (a imagem nova substitui a anterior)
+async function buildFromForm(fd, projectId) {
+  const steps = [];
+  for (let i = 0; i < BUILD_SLOTS; i++) {
+    let img = str(fd, `bimgold${i}`, 200);
+    if (img && !img.startsWith(`${projectId}/`)) img = '';
+    if (fd.get(`bimgdel${i}`) === '1') img = '';
+    const f = fd.get(`bimg${i}`);
+    if (f && typeof f !== 'string' && f.size) {
+      if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(f.name || '')) throw new Error('Na construção da marca, envie imagens (PNG, JPG, SVG ou WebP).');
+      img = (await saveUpload(projectId, f)).rel;
+    }
+    const t = str(fd, `bt${i}`, 80), d = str(fd, `bd${i}`, 300);
+    if (t || d || img) steps.push({ t, d, img: img || null });
+  }
+  return steps;
+}
+
+async function presentationFromForm(fd, projectId) {
   return {
     ...EMPTY_PRESENTATION,
     title: str(fd, 'title', 200),
     concept: str(fd, 'concept', 1000),
-    pillars: [0, 1, 2].map((i) => ({ t: str(fd, `pt${i}`, 60), d: str(fd, `pd${i}`, 300) })),
+    buildTitle: str(fd, 'buildTitle', 60) || EMPTY_PRESENTATION.buildTitle,
+    build: await buildFromForm(fd, projectId),
     palette: [0, 1, 2, 3].map((i) => ({
       name: str(fd, `cn${i}`, 40),
       hex: isHex(str(fd, `ch${i}`, 7)) ? str(fd, `ch${i}`, 7) : EMPTY_PRESENTATION.palette[i].hex,
@@ -181,7 +200,7 @@ function presentationFromForm(fd) {
 // Salva só o rascunho. O cliente continua vendo a última versão liberada (ou nada).
 export async function savePresentation(fd) {
   const { p } = await own(str(fd, 'id', 40));
-  await db.project.update({ where: { id: p.id }, data: { presentation: JSON.stringify(presentationFromForm(fd)) } });
+  await db.project.update({ where: { id: p.id }, data: { presentation: JSON.stringify(await presentationFromForm(fd, p.id)) } });
   back(p.id);
 }
 
@@ -189,7 +208,7 @@ export async function savePresentation(fd) {
 // e move o projeto para a etapa Proposta, aguardando a resposta dele.
 export async function publishPresentation(fd) {
   const { me, p } = await own(str(fd, 'id', 40));
-  const pres = presentationFromForm(fd);
+  const pres = await presentationFromForm(fd, p.id);
   const assets = await db.asset.findMany({ where: { projectId: p.id }, orderBy: { position: 'asc' } });
   const snap = draftSnapshot({ presentation: JSON.stringify(pres), assets });
   const last = await db.proposalVersion.findFirst({ where: { projectId: p.id }, orderBy: { number: 'desc' } });

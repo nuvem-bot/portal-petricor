@@ -2,7 +2,11 @@
 export const EMPTY_PRESENTATION = {
   title: '',
   concept: '',
-  pillars: [{ t: '', d: '' }, { t: '', d: '' }, { t: '', d: '' }],
+  // Antigo (versões liberadas antes da "construção da marca")
+  pillars: [],
+  // Construção da marca: etapas com imagem, título e texto (ex.: o eixo, as letras, a estrela…)
+  buildTitle: 'Construção da marca',
+  build: [],
   palette: [
     { name: '', hex: '#1E3FA8', note: '' },
     { name: '', hex: '#E8DCC4', note: '' },
@@ -61,3 +65,5 @@ export function versionSnapshot(v) {
     return null;
   }
 }
+
+export const BUILD_SLOTS = 6;

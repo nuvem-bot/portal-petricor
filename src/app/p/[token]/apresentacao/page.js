@@ -32,7 +32,7 @@ export default async function Apresentacao({ params, searchParams }) {
         brand={p.brandName}
         client={p.clientName}
         date={`${draft ? 'Rascunho' : `Versão ${version.number}`} · ${fmtDate(draft ? new Date() : version.publishedAt, { day: '2-digit', month: 'short', year: 'numeric' })}`}
-        pres={pres}
+        pres={{ ...pres, build: (pres.build || []).map((b) => ({ ...b, src: url(b.img) })) }}
         display={df}
         body={bf}
         logo={url(snap.logo)}

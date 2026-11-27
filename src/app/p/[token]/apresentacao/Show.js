@@ -17,9 +17,10 @@ export default function Show({ base, brand, client, date, pres, display, body, l
   const [play, setPlay] = useState(0);
   const [c1, c2, c3, c4] = pres.palette;
   const bg = c1.hex, fg = onColor(c1.hex);
-  const pillars = pres.pillars.filter((x) => x.t || x.d);
+  const pillars = (pres.pillars || []).filter((x) => x.t || x.d);
+  const build = (pres.build || []).filter((b) => b.t || b.d || b.src);
   const cover = pres.cover === 'grafismo' && !pattern ? 'liso' : pres.cover || 'liso';
-  const slides = ['capa', pres.concept && 'conceito', 'marca', 'paleta', 'tipografia', mockups.length && 'aplicacoes', 'fim'].filter(Boolean);
+  const slides = ['capa', pres.concept && 'conceito', build.length && 'construcao', 'marca', 'paleta', 'tipografia', mockups.length && 'aplicacoes', 'fim'].filter(Boolean);
 
   useEffect(() => {
     document.documentElement.style.overflow = 'hidden';
@@ -29,6 +30,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
       const i = els.indexOf(e.target);
       setIdx(i);
       if (e.target.dataset.s === 'marca') setPlay((n) => n + 1);
+      if (e.target.dataset.s === 'construcao') e.target.classList.add('in');
     }), { root: root.current, threshold: 0.55 });
     els.forEach((s) => io.observe(s));
     const key = (e) => {
@@ -69,7 +71,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
 
   const D = { fontFamily: `"${display}", Georgia, serif` };
   const cur = slides[idx];
-  const light = cur === 'marca';
+  const light = cur === 'marca' || cur === 'construcao';
 
   return (
     <div className="show" ref={root} style={{ background: bg, color: fg, fontFamily: `"${body}", system-ui, sans-serif`, '--fg': fg, '--c3': c3.hex }}>
@@ -95,6 +97,23 @@ export default function Show({ base, brand, client, date, pres, display, body, l
             {pillars.length > 0 && (
               <div className="cols">{pillars.map((pl, i) => <p key={i}><b style={D}>{pl.t}</b>{pl.d}</p>)}</div>
             )}
+          </div>
+        </section>
+      )}
+
+      {build.length > 0 && (
+        <section className="slide s-build" data-s="construcao" style={{ background: c2.hex, color: c1.hex }}>
+          <div className="sin">
+            <h2 className="b-title" style={D}>{pres.buildTitle || 'Construção da marca'}</h2>
+            <ol className={`b-steps n${Math.min(build.length, 6)}`}>
+              {build.map((b, i) => (
+                <li key={i} style={{ '--i': i }}>
+                  <div className="b-img">{b.src ? <img src={b.src} alt={b.t || `Etapa ${i + 1}`} /> : <span style={D}>{i + 1}</span>}</div>
+                  <b>{i + 1}. {b.t}</b>
+                  {b.d && <p>{b.d}</p>}
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
       )}

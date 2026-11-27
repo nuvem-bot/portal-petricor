@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { requireDesigner } from '@/lib/auth';
 import { STAGES, stageIndex, whoActs } from '@/lib/stages';
 import { QUESTIONS, parseBriefing } from '@/lib/briefing';
-import { parsePresentation, COVERS } from '@/lib/presentation';
+import { parsePresentation, COVERS, BUILD_SLOTS } from '@/lib/presentation';
 import { fileUrl, fmtDate, fmtDateTime, fmtSize } from '@/lib/url';
 import {
   setStage, regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation, publishPresentation,
@@ -210,16 +210,24 @@ export default async function ProjectPage({ params }) {
               </div>
               <div className="field"><label htmlFor="pr-title">Frase de abertura <span className="hint">aparece na capa, abaixo do nome</span></label><input id="pr-title" name="title" defaultValue={pres.title} placeholder="Ex.: cerâmica feita no ritmo da maré" /></div>
               <div className="field"><label htmlFor="pr-concept">Conceito</label><textarea id="pr-concept" name="concept" defaultValue={pres.concept} placeholder="O texto grande do slide de conceito. Uma ou duas frases." /></div>
-              <div><span className="field"><span>Três pilares do conceito</span></span>
-                <div className="stack" style={{ gap: 8, marginTop: 6 }}>
-                  {pres.pillars.map((pl, i) => (
-                    <div className="fgrid" key={i} style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)' }}>
-                      <input className="input" name={`pt${i}`} defaultValue={pl.t} placeholder="Título" aria-label={`Pilar ${i + 1}, título`} />
-                      <input className="input" name={`pd${i}`} defaultValue={pl.d} placeholder="Explicação curta" aria-label={`Pilar ${i + 1}, explicação`} />
+              <div className="field"><label htmlFor="pr-bt">Construção da marca <span className="hint">título do slide</span></label><input id="pr-bt" name="buildTitle" defaultValue={pres.buildTitle} placeholder="Ex.: Símbolo" /></div>
+              <p className="muted small" style={{ marginTop: -8 }}>Mostre passo a passo como a marca foi construída. Cada etapa tem uma imagem, um título e um texto curto. Deixe em branco as que não usar.</p>
+              <ol className="build-edit">
+                {Array.from({ length: BUILD_SLOTS }, (_, i) => pres.build[i] || { t: '', d: '', img: null }).map((st, i) => (
+                  <li key={i}>
+                    <div className="be-img">{st.img ? <img src={fileUrl(st.img)} alt="" /> : <span>{i + 1}</span>}</div>
+                    <div className="stack" style={{ gap: 6, minWidth: 0 }}>
+                      <input className="input" name={`bt${i}`} defaultValue={st.t} placeholder={`Etapa ${i + 1}: título (ex.: O eixo)`} aria-label={`Etapa ${i + 1}, título`} />
+                      <textarea className="input" name={`bd${i}`} defaultValue={st.d} placeholder="Texto curto (ex.: a mulher de pé, consciente do próprio valor)" aria-label={`Etapa ${i + 1}, texto`} rows={2} />
+                      <div className="row small" style={{ gap: 10 }}>
+                        <input type="hidden" name={`bimgold${i}`} value={st.img || ''} />
+                        <input type="file" name={`bimg${i}`} accept="image/*" aria-label={`Etapa ${i + 1}, imagem`} style={{ maxWidth: '100%' }} />
+                        {st.img && <label className="row" style={{ gap: 4 }}><input type="checkbox" name={`bimgdel${i}`} value="1" /> tirar imagem</label>}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </li>
+                ))}
+              </ol>
               <div><span className="field"><span>Paleta</span></span>
                 <div className="stack" style={{ gap: 8, marginTop: 6 }}>
                   {pres.palette.map((c, i) => (
