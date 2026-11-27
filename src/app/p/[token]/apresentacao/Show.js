@@ -10,6 +10,23 @@ function onColor(hex) {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#141414' : '#F7F4EE';
 }
 
+function lum(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * ch((n >> 16) & 255) + 0.7152 * ch((n >> 8) & 255) + 0.0722 * ch(n & 255);
+}
+function contrast(a, b) {
+  const x = lum(a), y = lum(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+// Cor de texto legível sobre um fundo: usa a preferida se der leitura,
+// senão a cor da paleta com mais contraste, senão preto/branco.
+function inkOn(bgHex, prefer, palette) {
+  if (prefer && contrast(bgHex, prefer) >= 3) return prefer;
+  const best = palette.map((c) => c.hex).filter(Boolean).sort((a, b) => contrast(bgHex, b) - contrast(bgHex, a))[0];
+  return best && contrast(bgHex, best) >= 4.5 ? best : onColor(bgHex);
+}
+
 export default function Show({ base, brand, client, date, pres, display, body, logo, pattern, mockups, canDecide }) {
   const root = useRef(null);
   const canvas = useRef(null);
@@ -17,6 +34,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
   const [play, setPlay] = useState(0);
   const [c1, c2, c3, c4] = pres.palette;
   const bg = c1.hex, fg = onColor(c1.hex);
+  const ink2 = inkOn(c2.hex, c1.hex, pres.palette); // texto sobre a cor de fundo (construção e marca)
   const pillars = (pres.pillars || []).filter((x) => x.t || x.d);
   const build = (pres.build || []).filter((b) => b.t || b.d || b.src);
   const cover = pres.cover === 'grafismo' && !pattern ? 'liso' : pres.cover || 'liso';
@@ -72,12 +90,13 @@ export default function Show({ base, brand, client, date, pres, display, body, l
 
   const D = { fontFamily: `"${display}", Georgia, serif` };
   const cur = slides[idx];
-  const light = cur === 'marca' || cur === 'construcao';
+  const onC2 = cur === 'marca' || cur === 'construcao';
+  const chrome = onC2 ? { color: ink2, borderColor: ink2 } : cur === 'aplicacoes' ? { color: onColor(c4.hex), borderColor: onColor(c4.hex) } : undefined;
 
   return (
     <div className="show" ref={root} style={{ background: bg, color: fg, fontFamily: `"${body}", system-ui, sans-serif`, '--fg': fg, '--c3': c3.hex }}>
-      <Link href={`${base}/proposta`} className="show-close" style={light ? { color: bg, borderColor: bg } : undefined}>Fechar ✕</Link>
-      <div className="show-count" style={light ? { color: bg } : undefined}>{String(idx + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}</div>
+      <Link href={`${base}/proposta`} className="show-close" style={chrome}>Fechar ✕</Link>
+      <div className="show-count" style={chrome && { color: chrome.color }}>{String(idx + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}</div>
 
       <section className={`slide s-cover cover-${cover}`} data-s="capa"
         style={cover === 'grafismo' ? { backgroundImage: `linear-gradient(90deg, ${bg}f2 0%, ${bg}b3 45%, ${bg}00 100%), url("${pattern}")` } : undefined}>
@@ -106,7 +125,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
       )}
 
       {build.length > 0 && (
-        <section className="slide s-build" data-s="construcao" style={{ background: c2.hex, color: c1.hex }}>
+        <section className="slide s-build" data-s="construcao" style={{ background: c2.hex, color: ink2 }}>
           <div className="sin">
             <h2 className="b-title" style={D}>{pres.buildTitle || 'Construção da marca'}</h2>
             <ol className={`b-steps n${Math.min(build.length, 6)}`}>
@@ -122,7 +141,7 @@ export default function Show({ base, brand, client, date, pres, display, body, l
         </section>
       )}
 
-      <section className="slide s-logo" data-s="marca" style={{ background: c2.hex, color: c1.hex }}>
+      <section className="slide s-logo" data-s="marca" style={{ background: c2.hex, color: ink2 }}>
         <div className="sin" style={{ textAlign: 'center' }}>
           <div className="slab">{pres.gridSrc ? 'Logo' : 'Marca'}</div>
           <div className={`lock ${pres.gridSrc ? 'grid' : ''} ${play ? 'go' : ''}`} key={play}>
