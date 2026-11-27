@@ -20,7 +20,8 @@ export default function Show({ base, brand, client, date, pres, display, body, l
   const pillars = (pres.pillars || []).filter((x) => x.t || x.d);
   const build = (pres.build || []).filter((b) => b.t || b.d || b.src);
   const cover = pres.cover === 'grafismo' && !pattern ? 'liso' : pres.cover || 'liso';
-  const slides = ['capa', pres.concept && 'conceito', build.length && 'construcao', 'marca', 'paleta', 'tipografia', mockups.length && 'aplicacoes', 'fim'].filter(Boolean);
+  const versions = (pres.logoVersions || []).filter((v) => v.src);
+  const slides = ['capa', pres.concept && 'conceito', build.length && 'construcao', 'marca', versions.length && 'versoes', 'paleta', 'tipografia', mockups.length && 'aplicacoes', 'fim'].filter(Boolean);
 
   useEffect(() => {
     document.documentElement.style.overflow = 'hidden';
@@ -120,16 +121,29 @@ export default function Show({ base, brand, client, date, pres, display, body, l
 
       <section className="slide s-logo" data-s="marca" style={{ background: c2.hex, color: c1.hex }}>
         <div className="sin" style={{ textAlign: 'center' }}>
-          <div className="slab">Marca</div>
-          <div className={`lock ${play ? 'go' : ''}`} key={play}>
-            {logo ? <img src={logo} alt={`Logo ${brand}`} /> : <span className="wm" style={D}>{brand}</span>}
+          <div className="slab">{pres.gridSrc ? 'Logo' : 'Marca'}</div>
+          <div className={`lock ${pres.gridSrc ? 'grid' : ''} ${play ? 'go' : ''}`} key={play}>
+            {pres.gridSrc ? <img src={pres.gridSrc} alt={`Logo ${brand} na malha de construção`} />
+              : logo ? <img src={logo} alt={`Logo ${brand}`} /> : <span className="wm" style={D}>{brand}</span>}
           </div>
           <button type="button" className="replay" onClick={() => setPlay((n) => n + 1)}>↻ ver de novo</button>
         </div>
       </section>
 
+      {versions.length > 0 && (
+        <section className="slide s-versions" data-s="versoes">
+          <div className={`lv-grid n${versions.length}`}>
+            {versions.map((v, i) => (
+              <div key={i} className="lv" style={{ background: v.bg }}>
+                <img src={v.src} alt={`Versão ${i + 1} do logo ${brand}`} loading="lazy" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="slide s-pal" data-s="paleta">
-        <div className="sw-grid">
+        <div className="sw-grid" style={{ '--cols': pres.palette.map((_, i) => ['2fr', '1.3fr', '1fr', '.8fr'][i] || '.7fr').join(' ') }}>
           {pres.palette.map((c, i) => (
             <div className="sw" key={i} style={{ background: c.hex, color: onColor(c.hex) }}>
               {i === 0 && <span className="slab">Paleta</span>}
@@ -141,16 +155,24 @@ export default function Show({ base, brand, client, date, pres, display, body, l
         </div>
       </section>
 
-      <section className="slide" data-s="tipografia">
+      <section className="slide s-type" data-s="tipografia">
         <div className="sin">
           <div className="slab">Tipografia</div>
-          <div className="spec">
-            <div className="aa" style={D}>A<i style={{ color: c3.hex }}>a</i></div>
-            <div>
-              <div className="glyphs" style={D}>Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz<br />ã é ç ô 0123456789</div>
-              <p className="pair">Títulos em {display}. Textos em {body}.{pres.typeNote ? ` ${pres.typeNote}` : ''}</p>
-            </div>
+          <div className="type-rows">
+            {pres.fonts.map((f, i) => (
+              <div className="type-row" key={i}>
+                <div className="type-meta">
+                  <b>{f.role || ['Títulos', 'Acento', 'Textos'][i]}</b>
+                  <span>{f.family}</span>
+                  {f.note && <small>{f.note}</small>}
+                </div>
+                <p className={`type-sample t${i} ${i === pres.fonts.length - 1 && i > 0 ? 'body' : ''}`} style={{ fontFamily: `"${f.family}", serif`, fontWeight: f.weight || 400, color: i === 1 && pres.fonts.length === 3 ? c3.hex : undefined }}>
+                  {f.sample || (i === 0 ? (pres.title || brand) : i === pres.fonts.length - 1 ? 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789' : brand)}
+                </p>
+              </div>
+            ))}
           </div>
+          {pres.typeNote && <p className="pair">{pres.typeNote}</p>}
         </div>
       </section>
 

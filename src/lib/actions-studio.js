@@ -7,7 +7,7 @@ import { requireDesigner, startSession, endSession, newToken } from './auth';
 import { saveUpload, removeUpload } from './files';
 import { STAGES } from './stages';
 import { answersFromForm } from './briefing';
-import { isHex, safeFont, EMPTY_PRESENTATION, COVERS, draftSnapshot, BUILD_SLOTS } from './presentation';
+import { isHex, safeFont, EMPTY_PRESENTATION, COVERS, draftSnapshot, BUILD_SLOTS, MAX_COLORS, MAX_FONTS, LOGO_VERSIONS, WEIGHTS } from './presentation';
 
 const str = (fd, k, max = 4000) => String(fd.get(k) ?? '').trim().slice(0, max);
 const log = (projectId, text) => db.event.create({ data: { projectId, actor: 'estudio', text } });
@@ -159,38 +159,70 @@ export async function deleteMoodItem(fd) {
   back(item.projectId);
 }
 
-// Etapas da construção da marca: título, texto e imagem (a imagem nova substitui a anterior)
+// Campo de imagem do formulário da apresentação: <key> (arquivo novo), <key>old (atual), <key>del (tirar)
+async function imageField(fd, key, projectId) {
+  let img = str(fd, `${key}old`, 200);
+  if (img && !img.startsWith(`${projectId}/`)) img = '';
+  if (fd.get(`${key}del`) === '1') img = '';
+  const f = fd.get(key);
+  if (f && typeof f !== 'string' && f.size) {
+    if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(f.name || '')) throw new Error('Envie imagens (PNG, JPG, SVG ou WebP).');
+    img = (await saveUpload(projectId, f)).rel;
+  }
+  return img || null;
+}
+
+// Etapas da construção da marca: título, texto e imagem
 async function buildFromForm(fd, projectId) {
   const steps = [];
   for (let i = 0; i < BUILD_SLOTS; i++) {
-    let img = str(fd, `bimgold${i}`, 200);
-    if (img && !img.startsWith(`${projectId}/`)) img = '';
-    if (fd.get(`bimgdel${i}`) === '1') img = '';
-    const f = fd.get(`bimg${i}`);
-    if (f && typeof f !== 'string' && f.size) {
-      if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(f.name || '')) throw new Error('Na construção da marca, envie imagens (PNG, JPG, SVG ou WebP).');
-      img = (await saveUpload(projectId, f)).rel;
-    }
+    const img = await imageField(fd, `bimg${i}`, projectId);
     const t = str(fd, `bt${i}`, 80), d = str(fd, `bd${i}`, 300);
-    if (t || d || img) steps.push({ t, d, img: img || null });
+    if (t || d || img) steps.push({ t, d, img });
   }
   return steps;
 }
 
 async function presentationFromForm(fd, projectId) {
+  const palette = [];
+  for (let i = 0; i < MAX_COLORS; i++) {
+    if (i >= 4 && !fd.has(`ch${i}`)) continue;
+    const hex = str(fd, `ch${i}`, 7);
+    palette.push({
+      name: str(fd, `cn${i}`, 40),
+      hex: isHex(hex) ? hex : (EMPTY_PRESENTATION.palette[i]?.hex || '#888888'),
+      note: str(fd, `cd${i}`, 140),
+    });
+  }
+  const fonts = [];
+  for (let i = 0; i < MAX_FONTS; i++) {
+    const family = safeFont(str(fd, `ff${i}`, 40), '');
+    if (!family) continue;
+    fonts.push({
+      role: str(fd, `fr${i}`, 40), family,
+      weight: WEIGHTS.includes(str(fd, `fw${i}`, 3)) ? str(fd, `fw${i}`, 3) : '400',
+      note: str(fd, `fn${i}`, 120), sample: str(fd, `fs${i}`, 200),
+    });
+  }
+  if (!fonts.length) fonts.push(...EMPTY_PRESENTATION.fonts);
+  const logoVersions = [];
+  for (let i = 0; i < LOGO_VERSIONS; i++) {
+    const img = await imageField(fd, `lv${i}`, projectId);
+    const bg = str(fd, `lvbg${i}`, 7);
+    if (img) logoVersions.push({ img, bg: isHex(bg) ? bg : '#FFFFFF' });
+  }
   return {
     ...EMPTY_PRESENTATION,
     title: str(fd, 'title', 200),
     concept: str(fd, 'concept', 1000),
     buildTitle: str(fd, 'buildTitle', 60) || EMPTY_PRESENTATION.buildTitle,
     build: await buildFromForm(fd, projectId),
-    palette: [0, 1, 2, 3].map((i) => ({
-      name: str(fd, `cn${i}`, 40),
-      hex: isHex(str(fd, `ch${i}`, 7)) ? str(fd, `ch${i}`, 7) : EMPTY_PRESENTATION.palette[i].hex,
-      note: str(fd, `cd${i}`, 140),
-    })),
-    displayFont: safeFont(str(fd, 'displayFont', 40), 'Fraunces'),
-    bodyFont: safeFont(str(fd, 'bodyFont', 40), 'Inter'),
+    gridImg: await imageField(fd, 'grid', projectId),
+    logoVersions,
+    palette,
+    fonts,
+    displayFont: fonts[0].family,
+    bodyFont: fonts[fonts.length - 1].family,
     typeNote: str(fd, 'typeNote', 400),
     closing: str(fd, 'closing', 120) || EMPTY_PRESENTATION.closing,
     cover: COVERS.some((c) => c.id === str(fd, 'cover', 20)) ? str(fd, 'cover', 20) : 'liso',

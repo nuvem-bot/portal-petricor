@@ -135,7 +135,7 @@ a.card:hover{border-color:var(--ink)}
 .sev.cliente{background:var(--accent)}
 .copy{display:flex;gap:8px}
 .copy input{flex:1;min-width:0;font-family:var(--mono);font-size:12px}
-.swrow{display:grid;grid-template-columns:44px minmax(0,1fr) minmax(0,1.3fr) minmax(0,2fr);gap:8px;align-items:center}
+.swrow{display:grid;grid-template-columns:44px minmax(0,1fr) 72px minmax(0,2fr) 44px;gap:8px;align-items:center}
 @media (max-width:600px){.swrow{grid-template-columns:44px minmax(0,1fr)}.swrow>*:nth-child(n+3){grid-column:2}}
 .swrow input[type=color]{width:44px;height:40px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--bg)}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
@@ -191,6 +191,16 @@ details.upload-existing > summary,.thumb details > summary{list-style:none;curso
 details.upload-existing > summary::-webkit-details-marker,.thumb details > summary::-webkit-details-marker{display:none}
 .thumb textarea.input{font-size:12px;padding:6px 8px;min-height:44px;resize:vertical}
 .build-edit{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-.build-edit li{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:start;padding:10px;border:1px solid var(--line);border-radius:10px}
+.build-edit li,.build-edit .be-row{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:start;padding:10px;border:1px solid var(--line);border-radius:10px}
 .be-img{width:72px;height:72px;border-radius:8px;background:var(--sunk);display:grid;place-items:center;overflow:hidden;font-family:var(--mono);font-size:12px;color:var(--muted)}
 .be-img img{width:100%;height:100%;object-fit:contain}
+
+/* Abas da apresentação */
+.tabbar{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:18px;scrollbar-width:thin}
+.tabbar button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;margin-bottom:-1px}
+.tabbar button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.tabbar .tdot{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.tabpanel{min-height:120px}
+.font-edit{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0;display:grid;gap:10px}
+.font-edit legend{font-size:12px;font-weight:600;color:var(--muted);padding:0 6px}
+.pres-actions{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}

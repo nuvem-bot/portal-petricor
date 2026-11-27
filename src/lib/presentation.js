@@ -13,8 +13,17 @@ export const EMPTY_PRESENTATION = {
     { name: '', hex: '#A8C3B0', note: '' },
     { name: '', hex: '#2A2A2A', note: '' },
   ],
+  // Até 3 fontes: papel (Títulos, Acento, Textos), família do Google Fonts, peso, observação e frase de exemplo
+  fonts: [
+    { role: 'Títulos', family: 'Fraunces', weight: '400', note: '', sample: '' },
+    { role: 'Textos', family: 'Inter', weight: '400', note: '', sample: '' },
+  ],
+  // Derivadas de fonts (a primeira para títulos, a última para textos)
   displayFont: 'Fraunces',
   bodyFont: 'Inter',
+  // Logo na malha de construção (imagem) e versões finais do logo sobre fundos da paleta
+  gridImg: null,
+  logoVersions: [],
   typeNote: '',
   closing: 'Essa é a sua marca. Ela é sua?',
   // Fundo da capa: liso | grafismo (imagem da marca) | ondas | grade | grao
@@ -24,7 +33,7 @@ export const EMPTY_PRESENTATION = {
 export function parsePresentation(raw) {
   try {
     const p = raw ? JSON.parse(raw) : {};
-    return { ...EMPTY_PRESENTATION, ...p };
+    return normalize({ ...EMPTY_PRESENTATION, ...p });
   } catch {
     return { ...EMPTY_PRESENTATION };
   }
@@ -60,10 +69,36 @@ export function versionSnapshot(v) {
   if (!v) return null;
   try {
     const s = JSON.parse(v.snapshot);
-    return { ...s, pres: { ...EMPTY_PRESENTATION, ...s.pres } };
+    return { ...s, pres: normalize({ ...EMPTY_PRESENTATION, ...s.pres }) };
   } catch {
     return null;
   }
 }
 
 export const BUILD_SLOTS = 6;
+
+export const MAX_COLORS = 8;
+export const MAX_FONTS = 3;
+export const LOGO_VERSIONS = 3;
+export const WEIGHTS = ['300', '400', '500', '700'];
+
+// Apresentações antigas não tinham a lista de fontes: monta a partir de displayFont/bodyFont
+function normalize(p) {
+  if (!p.fonts?.length || p.fonts === EMPTY_PRESENTATION.fonts) {
+    p.fonts = [
+      { role: 'Títulos', family: p.displayFont || 'Fraunces', weight: '400', note: '', sample: '' },
+      { role: 'Textos', family: p.bodyFont || 'Inter', weight: '400', note: '', sample: '' },
+    ];
+  }
+  while (p.palette.length < 4) p.palette.push(EMPTY_PRESENTATION.palette[p.palette.length]);
+  return p;
+}
+
+// Endereços de Google Fonts: um link simples (sempre funciona) e um com pesos (para fontes que têm vários)
+export function fontLinks(fonts) {
+  const fams = [...new Set(fonts.map((f) => safeFont(f.family, '')).filter(Boolean))];
+  return fams.flatMap((f) => {
+    const q = f.replace(/ /g, '+');
+    return [`https://fonts.googleapis.com/css2?family=${q}&display=swap`, `https://fonts.googleapis.com/css2?family=${q}:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap`];
+  });
+}

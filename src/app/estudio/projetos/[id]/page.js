@@ -4,7 +4,9 @@ import { db } from '@/lib/db';
 import { requireDesigner } from '@/lib/auth';
 import { STAGES, stageIndex, whoActs } from '@/lib/stages';
 import { QUESTIONS, parseBriefing } from '@/lib/briefing';
-import { parsePresentation, COVERS, BUILD_SLOTS } from '@/lib/presentation';
+import { parsePresentation, COVERS, BUILD_SLOTS, MAX_COLORS, MAX_FONTS, LOGO_VERSIONS, WEIGHTS } from '@/lib/presentation';
+import Tabs from '@/components/Tabs';
+import PaletteEditor from '@/components/PaletteEditor';
 import { fileUrl, fmtDate, fmtDateTime, fmtSize } from '@/lib/url';
 import {
   setStage, regenerateLink, addMoodItems, updateMoodCaption, deleteMoodItem, savePresentation, publishPresentation,
@@ -175,81 +177,141 @@ export default async function ProjectPage({ params }) {
                 ))}
               </ul>
             )}
-            <p className="muted small" style={{ marginBottom: 16 }}>“Salvar rascunho” guarda sem o cliente ver. “Liberar para o cliente” envia esta versão, com o logo e os mockups de agora, e move o projeto para Proposta.</p>
+            <p className="muted small" style={{ marginBottom: 16 }}>Preencha por partes. “Salvar rascunho” guarda tudo sem o cliente ver. “Liberar para o cliente” envia esta versão e move o projeto para Proposta.</p>
 
-            <div className="fgrid" style={{ marginBottom: 20 }}>
-              <div>
-                <span className="field"><span>Logo</span></span>
-                <p className="muted small" style={{ margin: '4px 0 8px' }}>SVG ou PNG. A primeira é a principal. Use fundo transparente.</p>
-                <AssetList items={logos} />
-                <UploadAssets id={p.id} kind="logo" label="Enviar logo" />
+            <Tabs storageKey={`pres-tab-${p.id}`} tabs={[
+              { id: 'capa', label: 'Capa', done: !!pres.title },
+              { id: 'conceito', label: 'Conceito', done: !!pres.concept },
+              { id: 'construcao', label: 'Construção', done: pres.build.length > 0 },
+              { id: 'logo', label: 'Logo', done: logos.length > 0 || !!pres.gridImg },
+              { id: 'cores', label: 'Cores', done: pres.palette.some((c) => c.name) },
+              { id: 'tipografia', label: 'Tipografia', done: pres.fonts.some((f) => f.note || f.sample) },
+              { id: 'aplicacoes', label: 'Aplicações', done: mockups.length > 0 },
+              { id: 'final', label: 'Final', done: false },
+            ]}>
+              {/* CAPA */}
+              <div className="form">
+                <div className="field">
+                  <label htmlFor="pr-cover">Fundo da capa</label>
+                  <select id="pr-cover" form="pres-form" name="cover" defaultValue={pres.cover}>
+                    {COVERS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <span className="hint">“Grafismo” usa a imagem enviada logo abaixo; sem imagem, a capa fica lisa.</span>
+                </div>
+                <div className="field"><label htmlFor="pr-title">Frase de abertura <span className="hint">aparece na capa, abaixo do nome</span></label><input id="pr-title" form="pres-form" name="title" defaultValue={pres.title} placeholder="Ex.: cerâmica feita no ritmo da maré" /></div>
+                <div>
+                  <span className="field"><span>Grafismo da marca <span className="hint">opcional</span></span></span>
+                  <p className="muted small" style={{ margin: '4px 0 8px' }}>Padrão, textura ou ilustração para o fundo da capa. Imagem larga (ex.: 2400 × 1500 px).</p>
+                  <AssetList items={grafismos} />
+                  {!grafismos.length && <UploadAssets id={p.id} kind="grafismo" label="Enviar grafismo" />}
+                </div>
               </div>
-              <div>
-                <span className="field"><span>Mockups e aplicações</span></span>
-                <p className="muted small" style={{ margin: '4px 0 8px' }}>Cartão, embalagem, post, fachada. Aparecem em grade na apresentação.</p>
+
+              {/* CONCEITO */}
+              <div className="form">
+                <div className="field"><label htmlFor="pr-concept">Conceito</label><textarea id="pr-concept" form="pres-form" name="concept" defaultValue={pres.concept} placeholder="O texto grande do slide de conceito. Uma ou duas frases." /></div>
+              </div>
+
+              {/* CONSTRUÇÃO */}
+              <div className="form">
+                <div className="field"><label htmlFor="pr-bt">Título do slide</label><input id="pr-bt" form="pres-form" name="buildTitle" defaultValue={pres.buildTitle} placeholder="Ex.: Símbolo" /></div>
+                <p className="muted small" style={{ marginTop: -8 }}>Mostre passo a passo como a marca foi construída. Cada etapa tem uma imagem, um título e um texto curto. Deixe em branco as que não usar.</p>
+                <ol className="build-edit">
+                  {Array.from({ length: BUILD_SLOTS }, (_, i) => pres.build[i] || { t: '', d: '', img: null }).map((st, i) => (
+                    <li key={i}>
+                      <div className="be-img">{st.img ? <img src={fileUrl(st.img)} alt="" /> : <span>{i + 1}</span>}</div>
+                      <div className="stack" style={{ gap: 6, minWidth: 0 }}>
+                        <input className="input" form="pres-form" name={`bt${i}`} defaultValue={st.t} placeholder={`Etapa ${i + 1}: título (ex.: O eixo)`} aria-label={`Etapa ${i + 1}, título`} />
+                        <textarea className="input" form="pres-form" name={`bd${i}`} defaultValue={st.d} placeholder="Texto curto" aria-label={`Etapa ${i + 1}, texto`} rows={2} />
+                        <ImageInput name={`bimg${i}`} current={st.img} label={`Etapa ${i + 1}, imagem`} />
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              {/* LOGO */}
+              <div className="form">
+                <div>
+                  <span className="field"><span>1. Logo na malha</span></span>
+                  <p className="muted small" style={{ margin: '4px 0 8px' }}>A primeira tela do logo: ele sobre a malha de construção. Suba a imagem pronta (PNG ou SVG).</p>
+                  <div className="build-edit"><div className="be-row">
+                    <div className="be-img">{pres.gridImg ? <img src={fileUrl(pres.gridImg)} alt="" /> : <span>#</span>}</div>
+                    <ImageInput name="grid" current={pres.gridImg} label="Logo na malha" />
+                  </div></div>
+                </div>
+                <div>
+                  <span className="field"><span>2. Versões finais do logo <span className="hint">até 3</span></span></span>
+                  <p className="muted small" style={{ margin: '4px 0 8px' }}>Ex.: versão completa, selo, versão em branco. Escolha a cor de fundo de cada uma. A primeira aparece maior.</p>
+                  <ol className="build-edit">
+                    {Array.from({ length: LOGO_VERSIONS }, (_, i) => pres.logoVersions[i] || { img: null, bg: [pres.palette[1].hex, '#FFFFFF', pres.palette[0].hex][i] }).map((lv, i) => (
+                      <li key={i}>
+                        <div className="be-img" style={{ background: lv.bg }}>{lv.img ? <img src={fileUrl(lv.img)} alt="" /> : <span>{i + 1}</span>}</div>
+                        <div className="stack" style={{ gap: 6, minWidth: 0 }}>
+                          <ImageInput name={`lv${i}`} current={lv.img} label={`Versão ${i + 1} do logo`} />
+                          <label className="row small" style={{ gap: 8 }}>Fundo
+                            <select form="pres-form" name={`lvbg${i}`} defaultValue={lv.bg}>
+                              {[...pres.palette.map((c, j) => ({ hex: c.hex, name: c.name || `Cor ${j + 1}` })), { hex: '#FFFFFF', name: 'Branco' }]
+                                .filter((c, j, all) => all.findIndex((x) => x.hex.toLowerCase() === c.hex.toLowerCase()) === j)
+                                .map((c) => <option key={c.hex} value={c.hex}>{c.name} ({c.hex.toUpperCase()})</option>)}
+                            </select>
+                          </label>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <div>
+                  <span className="field"><span>Logo principal (arquivo)</span></span>
+                  <p className="muted small" style={{ margin: '4px 0 8px' }}>Usado na miniatura da proposta e, se não houver logo na malha, na revelação do logo. SVG ou PNG com fundo transparente.</p>
+                  <AssetList items={logos} />
+                  <UploadAssets id={p.id} kind="logo" label="Enviar logo" />
+                </div>
+              </div>
+
+              {/* CORES */}
+              <div className="form">
+                <p className="muted small">As 4 primeiras são as básicas: principal, fundo, destaque e apoio. Adicione outras se a marca tiver.</p>
+                <PaletteEditor form="pres-form" initial={pres.palette} max={MAX_COLORS} />
+              </div>
+
+              {/* TIPOGRAFIA */}
+              <div className="form">
+                <p className="muted small">Até 3 fontes do Google Fonts. Ex.: Títulos (Cormorant Garamond), Acento (Pinyon Script), Apoio e texto (Jost). Deixe a família vazia para não usar.</p>
+                {Array.from({ length: MAX_FONTS }, (_, i) => pres.fonts[i] || { role: '', family: '', weight: '400', note: '', sample: '' }).map((f, i) => (
+                  <fieldset key={i} className="font-edit">
+                    <legend>Fonte {i + 1}</legend>
+                    <div className="fgrid">
+                      <div className="field"><label htmlFor={`ff${i}`}>Família no Google Fonts</label><input id={`ff${i}`} form="pres-form" name={`ff${i}`} defaultValue={f.family} placeholder={['Cormorant Garamond', 'Pinyon Script', 'Jost'][i]} /></div>
+                      <div className="field"><label htmlFor={`fr${i}`}>Uso</label><input id={`fr${i}`} form="pres-form" name={`fr${i}`} defaultValue={f.role} placeholder={['Títulos', 'Acento', 'Apoio e texto'][i]} /></div>
+                      <div className="field"><label htmlFor={`fw${i}`}>Peso do exemplo</label>
+                        <select id={`fw${i}`} form="pres-form" name={`fw${i}`} defaultValue={f.weight}>{WEIGHTS.map((w) => <option key={w} value={w}>{{ 300: 'Light 300', 400: 'Regular 400', 500: 'Medium 500', 700: 'Bold 700' }[w]}</option>)}</select>
+                      </div>
+                      <div className="field"><label htmlFor={`fn${i}`}>Observação</label><input id={`fn${i}`} form="pres-form" name={`fn${i}`} defaultValue={f.note} placeholder="Ex.: Light 300 e Regular 400" /></div>
+                    </div>
+                    <div className="field"><label htmlFor={`fs${i}`}>Frase de exemplo</label><input id={`fs${i}`} form="pres-form" name={`fs${i}`} defaultValue={f.sample} placeholder={['Primeiro a gente vive, depois aplica.', 'de Impacto você', 'O texto corrido da marca fica assim.'][i]} /></div>
+                  </fieldset>
+                ))}
+                <div className="field"><label htmlFor="pr-tn">Por que essas fontes <span className="hint">opcional</span></label><textarea id="pr-tn" form="pres-form" name="typeNote" defaultValue={pres.typeNote} style={{ minHeight: 60 }} /></div>
+              </div>
+
+              {/* APLICAÇÕES */}
+              <div className="form">
+                <p className="muted small">Cartão, embalagem, post, fachada. Aparecem em grade na apresentação.</p>
                 <AssetList items={mockups} />
                 <UploadAssets id={p.id} kind="mockup" label="Enviar mockups" multiple />
               </div>
-            </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <span className="field"><span>Grafismo da marca <span className="hint">opcional</span></span></span>
-              <p className="muted small" style={{ margin: '4px 0 8px' }}>Padrão, textura ou ilustração da identidade para o fundo da capa. Imagem larga (ex.: 2400 × 1500 px).</p>
-              <AssetList items={grafismos} />
-              {!grafismos.length && <UploadAssets id={p.id} kind="grafismo" label="Enviar grafismo" />}
-            </div>
+              {/* FINAL */}
+              <div className="form">
+                <div className="field"><label htmlFor="pr-cl">Pergunta final</label><input id="pr-cl" form="pres-form" name="closing" defaultValue={pres.closing} /></div>
+              </div>
+            </Tabs>
 
-            <form action={savePresentation} className="form">
+            <form id="pres-form" action={savePresentation} className="row pres-actions">
               <input type="hidden" name="id" value={p.id} />
-              <div className="field">
-                <label htmlFor="pr-cover">Fundo da capa</label>
-                <select id="pr-cover" name="cover" defaultValue={pres.cover}>
-                  {COVERS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <span className="hint">Escolha o que combina com a marca. “Grafismo” usa a imagem enviada logo abaixo; sem imagem, a capa fica lisa.</span>
-              </div>
-              <div className="field"><label htmlFor="pr-title">Frase de abertura <span className="hint">aparece na capa, abaixo do nome</span></label><input id="pr-title" name="title" defaultValue={pres.title} placeholder="Ex.: cerâmica feita no ritmo da maré" /></div>
-              <div className="field"><label htmlFor="pr-concept">Conceito</label><textarea id="pr-concept" name="concept" defaultValue={pres.concept} placeholder="O texto grande do slide de conceito. Uma ou duas frases." /></div>
-              <div className="field"><label htmlFor="pr-bt">Construção da marca <span className="hint">título do slide</span></label><input id="pr-bt" name="buildTitle" defaultValue={pres.buildTitle} placeholder="Ex.: Símbolo" /></div>
-              <p className="muted small" style={{ marginTop: -8 }}>Mostre passo a passo como a marca foi construída. Cada etapa tem uma imagem, um título e um texto curto. Deixe em branco as que não usar.</p>
-              <ol className="build-edit">
-                {Array.from({ length: BUILD_SLOTS }, (_, i) => pres.build[i] || { t: '', d: '', img: null }).map((st, i) => (
-                  <li key={i}>
-                    <div className="be-img">{st.img ? <img src={fileUrl(st.img)} alt="" /> : <span>{i + 1}</span>}</div>
-                    <div className="stack" style={{ gap: 6, minWidth: 0 }}>
-                      <input className="input" name={`bt${i}`} defaultValue={st.t} placeholder={`Etapa ${i + 1}: título (ex.: O eixo)`} aria-label={`Etapa ${i + 1}, título`} />
-                      <textarea className="input" name={`bd${i}`} defaultValue={st.d} placeholder="Texto curto (ex.: a mulher de pé, consciente do próprio valor)" aria-label={`Etapa ${i + 1}, texto`} rows={2} />
-                      <div className="row small" style={{ gap: 10 }}>
-                        <input type="hidden" name={`bimgold${i}`} value={st.img || ''} />
-                        <input type="file" name={`bimg${i}`} accept="image/*" aria-label={`Etapa ${i + 1}, imagem`} style={{ maxWidth: '100%' }} />
-                        {st.img && <label className="row" style={{ gap: 4 }}><input type="checkbox" name={`bimgdel${i}`} value="1" /> tirar imagem</label>}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              <div><span className="field"><span>Paleta</span></span>
-                <div className="stack" style={{ gap: 8, marginTop: 6 }}>
-                  {pres.palette.map((c, i) => (
-                    <div className="swrow" key={i}>
-                      <input type="color" name={`ch${i}`} defaultValue={c.hex} aria-label={`Cor ${i + 1}`} />
-                      <input className="input" name={`cn${i}`} defaultValue={c.name} placeholder="Nome da cor" aria-label={`Nome da cor ${i + 1}`} />
-                      <span className="when">{c.hex}</span>
-                      <input className="input" name={`cd${i}`} defaultValue={c.note} placeholder="Onde usar" aria-label={`Uso da cor ${i + 1}`} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="fgrid">
-                <div className="field"><label htmlFor="pr-df">Fonte de títulos <span className="hint">nome no Google Fonts</span></label><input id="pr-df" name="displayFont" defaultValue={pres.displayFont} /></div>
-                <div className="field"><label htmlFor="pr-bf">Fonte de textos</label><input id="pr-bf" name="bodyFont" defaultValue={pres.bodyFont} /></div>
-              </div>
-              <div className="field"><label htmlFor="pr-tn">Por que essas fontes</label><textarea id="pr-tn" name="typeNote" defaultValue={pres.typeNote} style={{ minHeight: 60 }} /></div>
-              <div className="field"><label htmlFor="pr-cl">Pergunta final</label><input id="pr-cl" name="closing" defaultValue={pres.closing} /></div>
-              <div className="row">
-                <Submit className="btn ghost">Salvar rascunho</Submit>
-                <Submit formAction={publishPresentation} pendingText="Liberando…">{p.versions.length ? `Liberar versão ${p.versions[0].number + 1} para o cliente` : 'Liberar para o cliente'}</Submit>
-              </div>
+              <Submit className="btn ghost">Salvar rascunho</Submit>
+              <Submit formAction={publishPresentation} pendingText="Liberando…">{p.versions.length ? `Liberar versão ${p.versions[0].number + 1} para o cliente` : 'Liberar para o cliente'}</Submit>
             </form>
           </section>
 
@@ -340,6 +402,16 @@ function AssetList({ items, download }) {
         );
       })}
     </ul>
+  );
+}
+
+function ImageInput({ name, current, label }) {
+  return (
+    <div className="row small" style={{ gap: 10 }}>
+      <input type="hidden" form="pres-form" name={`${name}old`} value={current || ''} />
+      <input type="file" form="pres-form" name={name} accept="image/*" aria-label={label} style={{ maxWidth: '100%' }} />
+      {current && <label className="row" style={{ gap: 4 }}><input type="checkbox" form="pres-form" name={`${name}del`} value="1" /> tirar imagem</label>}
+    </div>
   );
 }
 
